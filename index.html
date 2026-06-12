@@ -1,1306 +1,1062 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
-  <!-- ══════════════════════════════════════════════
-       META — PWA / GitHub Pages ready
-  ═════════════════════════════════════════════════ -->
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="theme-color" content="#0d1b3e" />
-  <meta name="mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="BUK Nav" />
-  <meta name="description" content="Interactive satellite campus navigation for Bayero University Kano (BUK) Old Site." />
-  <meta property="og:title" content="BUK Navigate — Old Site" />
-  <meta property="og:description" content="Satellite campus map for Bayero University Kano." />
-  <meta property="og:type" content="website" />
-  <title>BUK Navigate — Old Site</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" id="meta-theme" content="#0B2D72">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="description" content="Campus navigation for Bayero University Kano Old Site">
+<link rel="manifest" href="manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link id="leaflet-css" rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link id="lrm-css" rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css">
+<title>BUK Navigate</title>
+<style>
+:root{
+  --bg-primary:#0B2D72;--bg-secondary:#1C4D8D;--bg-surface:#2860AA;
+  --accent:#0AC4E0;--accent-mid:#0992C2;--accent-steel:#4988C4;
+  --mist:#BDE8F5;--cream:#F6E7BC;--mint:#43D9AD;
+  --text-1:#FFFFFF;--text-2:#BDE8F5;--text-3:rgba(189,232,245,0.55);
+  --border:rgba(189,232,245,0.15);
+  --shadow:0 4px 24px rgba(11,45,114,0.45);
+  --shadow-sm:0 2px 10px rgba(11,45,114,0.3);
+  --overlay:rgba(11,45,114,0.96);
+  --sheet-bg:#0B2D72;--header-bg:#0B2D72;
+  --input-bg:rgba(189,232,245,0.13);
+  --item-hover:rgba(189,232,245,0.08);
+  --pill-bg:rgba(189,232,245,0.14);
+  --scrollbar-thumb:rgba(189,232,245,0.3);
+}
+[data-theme="dark"]{
+  --bg-primary:#0F2854;--bg-secondary:#0B2D72;--bg-surface:#1C4D8D;
+  --accent:#0AC4E0;--accent-mid:#0992C2;--accent-steel:#4988C4;
+  --mist:#BDE8F5;--cream:#F6E7BC;--mint:#43D9AD;
+  --text-1:#FFFFFF;--text-2:#BDE8F5;--text-3:rgba(189,232,245,0.45);
+  --border:rgba(189,232,245,0.10);
+  --shadow:0 4px 28px rgba(0,0,0,0.55);
+  --shadow-sm:0 2px 10px rgba(0,0,0,0.4);
+  --overlay:rgba(15,40,84,0.97);
+  --sheet-bg:#0A2248;--header-bg:#0F2854;
+  --input-bg:rgba(189,232,245,0.07);
+  --item-hover:rgba(189,232,245,0.05);
+  --pill-bg:rgba(189,232,245,0.08);
+  --scrollbar-thumb:rgba(189,232,245,0.18);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:var(--bg-primary)}
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--scrollbar-thumb);border-radius:2px}
 
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet" />
+/* LOADING */
+#loading-screen{
+  position:fixed;inset:0;background:#0B2D72;
+  display:flex;align-items:center;justify-content:center;
+  z-index:9999;transition:opacity .5s ease;
+}
+#loading-screen.hidden{opacity:0;pointer-events:none}
+.loader-inner{display:flex;flex-direction:column;align-items:center;gap:14px;padding:24px;max-width:300px;text-align:center}
+.loader-compass{animation:spin-slow 4s linear infinite}
+@keyframes spin-slow{to{transform:rotate(360deg)}}
+.loader-brand{font-size:22px;font-weight:700;color:#fff;letter-spacing:-.3px}
+.loader-sub{font-size:11px;font-weight:500;color:#BDE8F5;letter-spacing:1.8px;text-transform:uppercase;margin-top:-8px}
+.loader-bar-wrap{width:140px;height:3px;background:rgba(189,232,245,0.2);border-radius:2px;overflow:hidden}
+.loader-bar-fill{height:100%;background:linear-gradient(90deg,#0AC4E0,#43D9AD);border-radius:2px;width:0%;transition:width .35s ease}
+.loader-error-icon{font-size:36px;margin-bottom:4px}
+.loader-error-msg{font-size:14px;color:#BDE8F5;line-height:1.7;margin-top:4px}
+.retry-btn{
+  margin-top:16px;background:#0AC4E0;color:#0B2D72;
+  border:none;border-radius:12px;padding:13px 28px;
+  font-family:'Inter';font-weight:700;font-size:14px;cursor:pointer;
+  transition:opacity .15s;
+}
+.retry-btn:active{opacity:.8}
 
-  <style>
-    /* ══════════════════════════════════════════════
-       DESIGN TOKENS — DARK MODE (default)
-    ═════════════════════════════════════════════════ */
-    :root {
-      --maroon:        #7b1d2e;
-      --maroon-b:      #a8293e;
-      --gold:          #c9973a;
-      --gold-soft:     rgba(201,151,58,0.13);
-      --gold-ring:     rgba(201,151,58,0.45);
-      --neon:          #ccff00;
-      --neon-glow:     rgba(204,255,0,0.35);
-      --blue-dot:      #1976d2;
+/* LAYOUT */
+#app{position:fixed;inset:0;display:flex;flex-direction:column}
 
-      --bg:            #0e1118;
-      --surface:       #161b26;
-      --surface-alt:   #1e2436;
-      --surface-raised:#252d44;
+/* HEADER */
+#app-header{
+  height:56px;flex-shrink:0;background:var(--header-bg);
+  display:flex;align-items:center;padding:0 12px;gap:8px;
+  border-bottom:1px solid var(--border);z-index:1100;
+  box-shadow:var(--shadow-sm);transition:background .3s;
+}
+.hdr-brand{flex:1;display:flex;flex-direction:column;line-height:1.2}
+.hdr-brand-name{font-size:16px;font-weight:700;color:var(--text-1);letter-spacing:-.2px}
+.hdr-brand-sub{font-size:10px;font-weight:500;color:var(--accent);letter-spacing:1.4px;text-transform:uppercase}
+.hdr-right{display:flex;gap:2px;align-items:center}
+.hdr-btn{
+  width:40px;height:40px;border:none;border-radius:10px;
+  background:transparent;color:var(--text-2);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:background .15s,color .15s;flex-shrink:0;
+}
+.hdr-btn:active{background:var(--item-hover)}
+.hdr-btn svg{width:20px;height:20px}
 
-      --border:        rgba(255,255,255,0.08);
-      --glass:         rgba(14,17,24,0.90);
-      --header-bg:     rgba(10,13,22,0.96);
+/* MAP */
+#map{flex:1;z-index:1;position:relative}
+#map::after{
+  content:'';position:absolute;inset:0;
+  background:transparent;pointer-events:none;z-index:350;transition:background .3s;
+}
+[data-theme="dark"] #map::after{background:rgba(15,40,84,0.18)}
+.leaflet-routing-container{display:none!important}
+.leaflet-control-attribution{font-size:9px!important;opacity:.4}
 
-      --text-primary:  #e4e8f0;
-      --text-secondary:#8a94b0;
-      --text-on-brand: #ffffff;
-      --text-muted:    #5a6280;
+/* GPS DOT */
+.gps-wrap{display:flex;align-items:center;justify-content:center;width:20px;height:20px;position:relative}
+.gps-dot{
+  width:14px;height:14px;background:#0AC4E0;border-radius:50%;
+  border:2.5px solid #fff;box-shadow:0 0 0 4px rgba(10,196,224,0.25);
+  position:relative;z-index:2;
+}
+.gps-ring{
+  position:absolute;width:28px;height:28px;
+  border:2px solid rgba(10,196,224,0.5);border-radius:50%;
+  animation:gps-pulse 1.8s ease-out infinite;
+}
+@keyframes gps-pulse{0%{transform:scale(.6);opacity:1}100%{transform:scale(2.2);opacity:0}}
 
-      --ctrl-bg:       rgba(22,27,38,0.95);
-      --ctrl-border:   rgba(255,255,255,0.09);
-      --ctrl-icon:     #c8d0e8;
+/* FABS */
+#gps-fab,#precache-fab{
+  position:fixed;right:16px;width:52px;height:52px;
+  border-radius:50%;border:none;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  z-index:900;transition:all .2s;box-shadow:var(--shadow);
+}
+#gps-fab{bottom:22px;background:var(--bg-secondary);color:var(--text-2)}
+#gps-fab.active{background:var(--accent);color:#0B2D72}
+#gps-fab svg,#precache-fab svg{width:22px;height:22px}
+#precache-fab{bottom:86px;background:var(--bg-secondary);color:var(--text-2)}
+#precache-fab.busy{opacity:.5;pointer-events:none}
 
-      --dropdown-bg:   #161b26;
-      --dropdown-hover:rgba(255,255,255,0.05);
-      --dropdown-div:  rgba(255,255,255,0.04);
+/* RETURN BUTTON */
+#return-btn{
+  position:fixed;top:68px;left:50%;transform:translateX(-50%);
+  background:var(--mint);color:#0A2248;border:none;border-radius:24px;
+  padding:9px 22px;font-family:'Inter';font-weight:700;font-size:13px;
+  cursor:pointer;z-index:1000;display:none;
+  box-shadow:0 2px 16px rgba(67,217,173,0.45);white-space:nowrap;
+}
 
-      --legend-text:   #b0bcd8;
+/* SEARCH OVERLAY */
+#search-overlay{
+  position:fixed;top:56px;left:0;right:0;
+  background:var(--overlay);backdrop-filter:blur(20px);
+  max-height:calc(100vh - 56px);overflow-y:auto;
+  transform:translateY(-105%);transition:transform .25s cubic-bezier(.4,0,.2,1);
+  z-index:1080;
+}
+#search-overlay.open{transform:translateY(0)}
+.search-bar{
+  display:flex;align-items:center;gap:10px;padding:12px 14px;
+  border-bottom:1px solid var(--border);
+  position:sticky;top:0;background:var(--overlay);backdrop-filter:blur(20px);
+}
+.search-back{
+  width:36px;height:36px;border:none;border-radius:8px;
+  background:var(--input-bg);color:var(--text-2);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.search-back svg{width:18px;height:18px}
+#search-input{
+  flex:1;background:var(--input-bg);border:1px solid var(--border);
+  border-radius:10px;padding:10px 14px;
+  font-family:'Inter';font-size:15px;color:var(--text-1);outline:none;
+  transition:border-color .15s;
+}
+#search-input::placeholder{color:var(--text-3)}
+#search-input:focus{border-color:var(--accent)}
+.search-results-list{padding:8px 0 24px}
+.search-item{
+  display:flex;align-items:center;gap:12px;
+  padding:13px 16px;cursor:pointer;transition:background .12s;
+  border-bottom:1px solid var(--border);
+}
+.search-item:active{background:var(--item-hover)}
+.type-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.search-name{font-size:14px;font-weight:600;color:var(--text-1)}
+.search-sub{font-size:12px;color:var(--text-3);margin-top:2px}
+.search-empty{text-align:center;padding:36px 20px;color:var(--text-3);font-size:14px;line-height:1.65}
+.search-empty strong{color:var(--text-2);display:block;margin-bottom:6px;font-size:15px}
 
-      --panel-bg:      #161b26;
-      --panel-tab-active:      #252d44;
-      --panel-tab-text:        #8a94b0;
-      --panel-tab-active-text: #e4e8f0;
-      --chip-bg:       #1e2436;
-      --chip-border:   rgba(255,255,255,0.06);
+/* BUILDING BOTTOM SHEET */
+#building-sheet{
+  position:fixed;bottom:0;left:0;right:0;
+  background:var(--sheet-bg);border-radius:20px 20px 0 0;
+  max-height:72vh;overflow-y:auto;
+  transform:translateY(105%);
+  transition:transform .32s cubic-bezier(.32,.72,0,1);
+  z-index:1050;box-shadow:0 -4px 32px rgba(0,0,0,0.35);
+}
+#building-sheet.open{transform:translateY(0)}
+.sheet-handle-wrap{
+  padding:12px 0 4px;display:flex;justify-content:center;
+  cursor:pointer;flex-shrink:0;
+}
+.sheet-handle{width:40px;height:4px;background:var(--border);border-radius:2px}
+#sheet-content{padding:0 18px 100px}
+.sheet-toprow{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:10px}
+.type-badge{
+  display:inline-flex;align-items:center;padding:4px 12px;border-radius:20px;
+  font-size:11px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;
+}
+.sheet-close{
+  width:32px;height:32px;border-radius:8px;border:none;
+  background:var(--input-bg);color:var(--text-3);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.sheet-close svg{width:16px;height:16px}
+.sheet-name{font-size:20px;font-weight:700;color:var(--text-1);line-height:1.25;margin-bottom:4px}
+.sheet-alias{font-size:12px;color:var(--accent);font-weight:500;margin-bottom:10px}
+.sheet-inactive{
+  display:inline-flex;align-items:center;gap:5px;
+  background:rgba(246,231,188,0.12);color:var(--cream);
+  font-size:11px;font-weight:600;padding:4px 10px;border-radius:6px;margin-bottom:12px;
+}
+.sheet-desc{font-size:14px;color:var(--text-2);line-height:1.65;margin-bottom:16px}
+.sheet-label{font-size:11px;font-weight:700;color:var(--text-3);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px}
+.courses-wrap{margin-bottom:18px}
+.courses-list{display:flex;flex-wrap:wrap;gap:6px}
+.course-pill{
+  background:var(--pill-bg);color:var(--mist);
+  border:1px solid var(--border);border-radius:16px;
+  font-size:12px;font-weight:500;padding:4px 11px;
+}
+.sheet-actions{display:flex;gap:10px;margin-top:18px}
+.btn-primary{
+  flex:1;background:var(--accent);color:#0B2D72;border:none;border-radius:12px;
+  padding:14px;font-family:'Inter';font-size:14px;font-weight:700;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;gap:8px;transition:opacity .15s;
+}
+.btn-primary:active{opacity:.8}
+.btn-primary svg{width:18px;height:18px}
+.btn-secondary{
+  flex:0 0 auto;background:var(--input-bg);color:var(--text-2);
+  border:1px solid var(--border);border-radius:12px;padding:14px 18px;
+  font-family:'Inter';font-size:14px;font-weight:600;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;gap:8px;transition:opacity .15s;
+}
+.btn-secondary:active{opacity:.7}
+.btn-secondary svg{width:18px;height:18px}
 
-      --card-bg:       rgba(204,255,0,0.06);
-      --card-border:   rgba(204,255,0,0.18);
+/* AKTH MODAL */
+#akth-modal{
+  position:fixed;inset:0;background:rgba(0,0,0,0.65);
+  display:flex;align-items:center;justify-content:center;padding:20px;
+  z-index:2000;opacity:0;pointer-events:none;transition:opacity .2s;
+}
+#akth-modal.open{opacity:1;pointer-events:all}
+.akth-card{
+  background:var(--bg-secondary);border-radius:20px;padding:24px;
+  width:100%;max-width:380px;box-shadow:var(--shadow);
+}
+.akth-badge{
+  display:inline-block;background:rgba(246,231,188,0.15);color:var(--cream);
+  font-size:10px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;
+  padding:4px 10px;border-radius:6px;margin-bottom:12px;
+}
+.akth-title{font-size:18px;font-weight:700;color:var(--text-1);margin-bottom:12px}
+.akth-body{font-size:14px;color:var(--text-2);line-height:1.65;margin-bottom:20px}
+.akth-actions{display:flex;flex-direction:column;gap:10px}
+.btn-mint{
+  background:var(--mint);color:#0A2248;border:none;border-radius:12px;
+  padding:14px;font-family:'Inter';font-size:14px;font-weight:700;
+  cursor:pointer;transition:opacity .15s;
+}
+.btn-mint:active{opacity:.8}
+.btn-ghost{
+  background:var(--input-bg);color:var(--text-3);border:1px solid var(--border);
+  border-radius:12px;padding:12px;
+  font-family:'Inter';font-size:14px;font-weight:500;cursor:pointer;
+}
 
-      --res-bg:        rgba(255,255,255,0.04);
-      --res-border:    rgba(255,255,255,0.07);
-      --res-hover:     rgba(255,255,255,0.08);
+/* FULL-SCREEN OVERLAYS */
+.fs-overlay{
+  position:fixed;inset:0;background:var(--overlay);z-index:1500;
+  transform:translateX(105%);transition:transform .3s ease;overflow-y:auto;
+}
+.fs-overlay.open{transform:translateX(0)}
+.ov-header{
+  display:flex;align-items:center;gap:12px;padding:16px 16px 12px;
+  border-bottom:1px solid var(--border);
+  position:sticky;top:0;background:var(--overlay);backdrop-filter:blur(20px);z-index:2;
+}
+.ov-back{
+  width:38px;height:38px;border:none;border-radius:10px;
+  background:var(--input-bg);color:var(--text-2);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+}
+.ov-back svg{width:18px;height:18px}
+.ov-title{font-size:18px;font-weight:700;color:var(--text-1)}
+.ov-body{padding:20px 16px 80px}
 
-      --toast-bg:      #252d44;
-      --toast-text:    #e4e8f0;
-      --toast-border:  rgba(255,255,255,0.09);
+/* LIBRARY */
+.lib-category{margin-bottom:28px}
+.lib-cat-title{font-size:11px;font-weight:700;color:var(--text-3);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:12px}
+.lib-item{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px;background:var(--input-bg);border:1px solid var(--border);
+  border-radius:12px;margin-bottom:8px;text-decoration:none;
+  transition:background .12s;cursor:default;
+}
+.lib-item.available{cursor:pointer}
+.lib-item.available:active{background:var(--item-hover)}
+.lib-item-info{flex:1}
+.lib-item-title{font-size:14px;font-weight:600;color:var(--text-1)}
+.lib-item-meta{font-size:12px;color:var(--text-3);margin-top:2px}
+.lib-soon{font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;background:rgba(189,232,245,0.1);color:var(--text-3);padding:3px 8px;border-radius:6px;flex-shrink:0}
+.lib-open{width:32px;height:32px;background:var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.lib-open svg{width:16px;height:16px;color:#0B2D72}
 
-      --err-bg:        #1e1014;
-      --err-border:    rgba(168,41,62,0.45);
-      --err-text:      #f4a0a0;
+/* ABOUT */
+.about-tagline{font-size:22px;font-weight:800;color:var(--text-1);line-height:1.3;margin-bottom:20px}
+.about-section{margin-bottom:24px}
+.about-heading{font-size:11px;font-weight:700;color:var(--accent);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px}
+.about-text{font-size:14px;color:var(--text-2);line-height:1.7}
+.about-point{display:flex;gap:10px;margin-bottom:10px}
+.about-point-dot{width:6px;height:6px;background:var(--mint);border-radius:50%;margin-top:7px;flex-shrink:0}
+.about-footer{text-align:center;padding:24px 0;border-top:1px solid var(--border);color:var(--text-3);font-size:13px;line-height:1.8}
+.about-heart{color:var(--mint)}
+.about-ver{display:inline-block;margin-top:8px;font-size:11px;font-weight:700;background:var(--pill-bg);color:var(--accent);padding:3px 10px;border-radius:10px;letter-spacing:.5px}
 
-      --admin-bg:      rgba(201,151,58,0.16);
-      --admin-border:  rgba(201,151,58,0.55);
-      --admin-text:    #f0c060;
+/* MENU DRAWER */
+#menu-backdrop{position:fixed;inset:0;z-index:1200;display:none}
+#menu-backdrop.open{display:block}
+#menu-drawer{
+  position:fixed;bottom:-200px;right:0;left:0;background:var(--bg-secondary);
+  border-radius:20px 20px 0 0;z-index:1250;
+  transition:bottom .28s cubic-bezier(.32,.72,0,1);
+  padding:6px 0 40px;box-shadow:var(--shadow);
+}
+#menu-drawer.open{bottom:0}
+.menu-handle-wrap{display:flex;justify-content:center;padding:10px 0 14px;cursor:pointer}
+.menu-handle{width:36px;height:3px;background:var(--border);border-radius:2px}
+.menu-item{
+  display:flex;align-items:center;gap:14px;padding:15px 20px;
+  cursor:pointer;transition:background .12s;
+  font-size:15px;font-weight:600;color:var(--text-1);
+}
+.menu-item:active{background:var(--item-hover)}
+.menu-item svg{width:20px;height:20px;color:var(--accent);flex-shrink:0}
 
-      --scroll-thumb:  rgba(255,255,255,0.12);
-      /* Satellite tiles are always shown; dark mode dims the UI only.
-         A very subtle overlay hint makes the satellite feel "night mode" */
-      --map-overlay:   rgba(0,0,20,0.18);
-
-      --radius:    14px;
-      --radius-lg: 20px;
-      --shadow:    0 8px 28px rgba(0,0,0,0.55);
-      --shadow-lg: 0 20px 60px rgba(0,0,0,0.70);
-      --ease:      cubic-bezier(0.4,0,0.2,1);
-    }
-
-    /* ══════════════════════════════════════════════
-       LIGHT MODE — UI panels only
-       Satellite tiles are unchanged; only chrome flips.
-    ═════════════════════════════════════════════════ */
-    body.light {
-      --bg:            #edf0f8;
-      --surface:       #ffffff;
-      --surface-alt:   #edf0f8;
-      --surface-raised:#dde3f4;
-      --border:        rgba(13,27,62,0.10);
-      --glass:         rgba(237,240,248,0.93);
-      --header-bg:     rgba(10,18,48,0.97);
-      --text-primary:  #0d1b3e;
-      --text-secondary:#4a5580;
-      --text-muted:    #7a85a8;
-      --ctrl-bg:       rgba(255,255,255,0.96);
-      --ctrl-border:   rgba(13,27,62,0.13);
-      --ctrl-icon:     #0d1b3e;
-      --dropdown-bg:   #ffffff;
-      --dropdown-hover:rgba(13,27,62,0.05);
-      --dropdown-div:  rgba(13,27,62,0.05);
-      --legend-text:   #2a3a6a;
-      --panel-bg:      #ffffff;
-      --panel-tab-active:      #0d1b3e;
-      --panel-tab-text:        #4a5580;
-      --panel-tab-active-text: #ffffff;
-      --chip-bg:       #edf0f8;
-      --chip-border:   rgba(13,27,62,0.09);
-      --card-bg:       rgba(100,160,0,0.07);
-      --card-border:   rgba(100,160,0,0.22);
-      --res-bg:        rgba(13,27,62,0.04);
-      --res-border:    rgba(13,27,62,0.09);
-      --res-hover:     rgba(13,27,62,0.08);
-      --toast-bg:      #0d1b3e;
-      --toast-text:    #ffffff;
-      --toast-border:  rgba(255,255,255,0.14);
-      --err-bg:        #fff0f0;
-      --err-border:    rgba(168,41,62,0.26);
-      --err-text:      #7b1d2e;
-      --admin-bg:      rgba(120,80,0,0.10);
-      --admin-border:  rgba(140,95,0,0.50);
-      --admin-text:    #7a5000;
-      --scroll-thumb:  rgba(13,27,62,0.14);
-      --map-overlay:   transparent;
-    }
-
-    /* ══════════════════════════════════════════════
-       BASE
-    ═════════════════════════════════════════════════ */
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body {
-      height: 100%; overflow: hidden;
-      font-family: 'DM Sans', sans-serif;
-      background: var(--bg); color: var(--text-primary);
-      padding-top: env(safe-area-inset-top);
-    }
-
-    /* ══════════════════════════════════════════════
-       MAP
-    ═════════════════════════════════════════════════ */
-    #map { position: absolute; inset: 0; z-index: 0; }
-    /* Dark-mode tint overlay — sits above satellite tiles, below Leaflet markers */
-    #map-overlay {
-      position: absolute; inset: 0; z-index: 1;
-      background: var(--map-overlay);
-      pointer-events: none;
-      transition: background 0.45s var(--ease);
-    }
-    body.admin-mode #map { cursor: crosshair !important; }
-
-    /* ══════════════════════════════════════════════
-       LEAFLET CHROME OVERRIDES
-    ═════════════════════════════════════════════════ */
-    .leaflet-control-zoom { display: none !important; }
-    .leaflet-control-attribution {
-      background: var(--glass) !important;
-      color: var(--text-secondary) !important;
-      font-size: 10px !important;
-      backdrop-filter: blur(8px);
-      border-radius: 8px 0 0 0 !important;
-      padding: 3px 8px !important;
-      border-top: 1px solid var(--border) !important;
-    }
-    .leaflet-control-attribution a { color: var(--neon) !important; }
-    .leaflet-popup-content-wrapper {
-      background: var(--surface) !important; color: var(--text-primary) !important;
-      border-radius: var(--radius) !important; box-shadow: var(--shadow) !important;
-      border: 1px solid var(--border) !important;
-    }
-    .leaflet-popup-tip { background: var(--surface) !important; }
-
-    /* ══════════════════════════════════════════════
-       ZOOM-DEPENDENT BUILDING LABELS
-       Over satellite, we always use the dark-text-on-
-       bright-halo variant since the tiles are photographic.
-    ═════════════════════════════════════════════════ */
-    .buk-label-wrap {
-      background: transparent !important;
-      border: none !important;
-      overflow: visible !important;
-    }
-    .buk-label {
-      display: inline-block;
-      transform: translate(-50%, -50%);
-      white-space: nowrap;
-      pointer-events: none;
-      user-select: none;
-      font-family: 'DM Sans', sans-serif;
-      font-size: 11.5px;
-      font-weight: 800;
-      letter-spacing: 0.05em;
-      color: #ffffff;
-      /* Heavy halo — readable over any satellite texture */
-      text-shadow:
-        -1.5px -1.5px 0 rgba(0,0,0,1),
-         1.5px -1.5px 0 rgba(0,0,0,1),
-        -1.5px  1.5px 0 rgba(0,0,0,1),
-         1.5px  1.5px 0 rgba(0,0,0,1),
-         0      0     5px rgba(0,0,0,0.95),
-         0      0    10px rgba(0,0,0,0.70),
-         0      0    16px rgba(0,0,0,0.45);
-      opacity: 0;
-      transition: opacity 0.38s var(--ease);
-    }
-    .buk-label.visible { opacity: 1; }
-    /* Light mode UI: labels on satellite are still white-on-black-halo
-       because the tiles don't change. No override needed. */
-
-    /* ══════════════════════════════════════════════
-       ENTRANCE DOT — activated building entrance pin
-    ═════════════════════════════════════════════════ */
-    .entrance-dot {
-      width: 12px; height: 12px; border-radius: 50%;
-      border: 2.5px solid #ffffff;
-      box-shadow:
-        0 0 0 2px rgba(0,0,0,0.4),
-        0 3px 12px rgba(0,0,0,0.6);
-    }
-
-    /* ══════════════════════════════════════════════
-       SEARCH PULSE MARKER — neon ring on search
-    ═════════════════════════════════════════════════ */
-    @keyframes search-ring {
-      0%   { transform: scale(1);   opacity: 0.85; }
-      65%  { transform: scale(3.4); opacity: 0; }
-      100% { transform: scale(3.4); opacity: 0; }
-    }
-    .sp-wrap { position: relative; width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; }
-    .sp-ring { position: absolute; width: 18px; height: 18px; border-radius: 50%; animation: search-ring 1.7s ease-out infinite; }
-    .sp-core { position: relative; z-index: 1; width: 12px; height: 12px; border-radius: 50%; border: 2.5px solid #ffffff; box-shadow: 0 2px 12px rgba(0,0,0,0.70); }
-
-    /* ══════════════════════════════════════════════
-       BLUE PULSE DOT (live location)
-    ═════════════════════════════════════════════════ */
-    @keyframes blue-ring {
-      0%   { transform: scale(1);   opacity: 0.75; }
-      70%  { transform: scale(2.8); opacity: 0; }
-      100% { transform: scale(2.8); opacity: 0; }
-    }
-    .bd-wrap { position: relative; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; }
-    .bd-ring { position: absolute; width: 20px; height: 20px; border-radius: 50%; background: rgba(25,118,210,0.40); animation: blue-ring 2.2s ease-out infinite; }
-    .bd-core { position: relative; z-index: 1; width: 14px; height: 14px; border-radius: 50%; background: #1976d2; border: 2.5px solid #ffffff; box-shadow: 0 2px 10px rgba(25,118,210,0.70); }
-
-    /* Admin coord pin */
-    .admin-pin { width: 12px; height: 12px; border-radius: 50%; background: var(--gold); border: 2px solid #ffffff; box-shadow: 0 2px 8px rgba(201,151,58,0.8); }
-
-    /* ══════════════════════════════════════════════
-       HEADER
-    ═════════════════════════════════════════════════ */
-    #header {
-      position: absolute; top: 0; left: 0; right: 0; z-index: 900;
-      padding: 14px 14px 0;
-      padding-top: calc(14px + env(safe-area-inset-top));
-    }
-    .header-row { display: flex; align-items: center; gap: 10px; }
-
-    .logo {
-      display: flex; align-items: center; gap: 9px;
-      background: var(--maroon); color: var(--text-on-brand);
-      padding: 9px 15px; border-radius: 50px;
-      flex-shrink: 0; box-shadow: var(--shadow);
-      text-decoration: none; user-select: none;
-    }
-    .logo-mark { font-size: 18px; line-height: 1; }
-    .logo-text { font-family: 'Playfair Display', serif; font-size: 14px; font-weight: 700; line-height: 1; }
-    .logo-sub  { font-size: 9px; font-weight: 300; opacity: 0.60; letter-spacing: 0.09em; text-transform: uppercase; }
-
-    .search-wrap { flex: 1; position: relative; }
-    #search-input {
-      width: 100%; background: var(--header-bg);
-      backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
-      border: 1.5px solid rgba(255,255,255,0.10); color: var(--text-on-brand);
-      font-family: 'DM Sans', sans-serif; font-size: 14px;
-      padding: 11px 44px 11px 18px; border-radius: 50px; outline: none;
-      box-shadow: var(--shadow); transition: border-color 0.3s;
-    }
-    #search-input::placeholder { color: rgba(255,255,255,0.35); opacity: 1; }
-    #search-input:focus { border-color: var(--gold-ring); }
-    .search-icon { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); pointer-events: none; color: rgba(255,255,255,0.40); }
-    .search-icon svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-
-    .hdr-btns { display: flex; gap: 8px; flex-shrink: 0; }
-    .hdr-btn {
-      height: 40px; padding: 0 13px; border-radius: 50px;
-      border: 1.5px solid rgba(255,255,255,0.12); background: var(--header-bg);
-      backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
-      color: var(--text-on-brand);
-      font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 600;
-      cursor: pointer; display: flex; align-items: center; gap: 6px;
-      box-shadow: var(--shadow); transition: background 0.2s, border-color 0.2s; white-space: nowrap;
-    }
-    .hdr-btn:hover { background: rgba(25,40,90,0.98); border-color: rgba(255,255,255,0.22); }
-    .hdr-btn svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-    #theme-btn { padding: 0 11px; }
-
-    /* ══════════════════════════════════════════════
-       ADMIN BADGE
-    ═════════════════════════════════════════════════ */
-    #admin-badge {
-      display: none; pointer-events: none;
-      position: absolute;
-      top: calc(72px + env(safe-area-inset-top));
-      left: 50%; transform: translateX(-50%);
-      z-index: 910;
-      background: var(--admin-bg); border: 1.5px solid var(--admin-border); color: var(--admin-text);
-      font-size: 11px; font-weight: 700; padding: 6px 16px; border-radius: 50px;
-      letter-spacing: 0.07em; text-transform: uppercase;
-      backdrop-filter: blur(12px); white-space: nowrap;
-      animation: badge-glow 3s ease-in-out infinite;
-    }
-    #admin-badge.visible { display: flex; align-items: center; gap: 7px; }
-    #admin-badge svg { width: 13px; height: 13px; flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
-    @keyframes badge-glow {
-      0%,100% { box-shadow: 0 4px 16px rgba(201,151,58,0.25); }
-      50%      { box-shadow: 0 4px 24px rgba(201,151,58,0.52); }
-    }
-
-    /* ══════════════════════════════════════════════
-       SEARCH DROPDOWN
-    ═════════════════════════════════════════════════ */
-    #search-results {
-      position: absolute; top: calc(100% + 8px); left: 0; right: 0;
-      background: var(--dropdown-bg); border: 1.5px solid var(--border);
-      border-radius: var(--radius); overflow: hidden;
-      box-shadow: var(--shadow-lg); display: none; z-index: 999;
-      max-height: 280px; overflow-y: auto;
-    }
-    #search-results.open { display: block; }
-    .sr-item { display: flex; align-items: center; gap: 12px; padding: 11px 16px; cursor: pointer; transition: background 0.15s; border-bottom: 1px solid var(--dropdown-div); }
-    .sr-item:last-child { border-bottom: none; }
-    .sr-item:hover { background: var(--dropdown-hover); }
-    .sr-icon { width: 34px; height: 34px; border-radius: 9px; display: grid; place-items: center; font-size: 18px; flex-shrink: 0; }
-    .sr-name { font-size: 13px; font-weight: 600; color: var(--text-primary); line-height: 1.3; }
-    .sr-meta { font-size: 11px; color: var(--text-secondary); margin-top: 1px; }
-    .sr-score { margin-left: auto; font-size: 10px; font-weight: 700; background: var(--gold-soft); color: var(--gold); padding: 2px 8px; border-radius: 50px; flex-shrink: 0; }
-    .sr-empty { padding: 18px 16px; font-size: 13px; color: var(--text-secondary); text-align: center; }
-
-    /* ══════════════════════════════════════════════
-       LEGEND
-    ═════════════════════════════════════════════════ */
-    #legend {
-      position: absolute; left: 14px; bottom: 226px; z-index: 900;
-      background: var(--glass); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
-      border: 1.5px solid var(--border); border-radius: var(--radius);
-      padding: 12px 14px; box-shadow: var(--shadow);
-    }
-    .legend-title { font-size: 9px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.13em; margin-bottom: 9px; }
-    .legend-row   { display: flex; align-items: center; gap: 9px; font-size: 11.5px; color: var(--legend-text); margin-bottom: 7px; }
-    .legend-row:last-of-type { margin-bottom: 0; }
-    .lg-poly {
-      width: 16px; height: 11px; flex-shrink: 0; border-radius: 3px;
-      background: rgba(204,255,0,0.08);
-      border: 2px dashed rgba(204,255,0,0.55);
-    }
-    .lg-poly-active {
-      width: 16px; height: 11px; flex-shrink: 0; border-radius: 3px;
-      background: rgba(204,255,0,0.18);
-      border: 2px solid #ccff00;
-      box-shadow: 0 0 6px rgba(204,255,0,0.30);
-    }
-    .lg-dot-blue {
-      width: 11px; height: 11px; flex-shrink: 0; border-radius: 50%;
-      background: var(--blue-dot); border: 2px solid rgba(255,255,255,0.8);
-      box-shadow: 0 0 6px rgba(25,118,210,0.6);
-    }
-    .lg-zoom-hint {
-      margin-top: 9px; padding-top: 9px;
-      border-top: 1px solid var(--border);
-      font-size: 10px; color: var(--text-muted);
-      display: flex; align-items: center; gap: 6px;
-    }
-    .lg-zoom-hint svg { width: 11px; height: 11px; flex-shrink: 0; opacity: 0.55; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-
-    /* ══════════════════════════════════════════════
-       FLOATING CONTROLS
-    ═════════════════════════════════════════════════ */
-    #controls {
-      position: absolute; right: 14px; bottom: 226px;
-      z-index: 900; display: flex; flex-direction: column; gap: 9px;
-    }
-    .ctrl-btn {
-      width: 46px; height: 46px; border-radius: 50%; border: none; cursor: pointer;
-      display: grid; place-items: center;
-      box-shadow: var(--shadow); transition: transform 0.18s, background 0.2s;
-    }
-    .ctrl-btn:active { transform: scale(0.9); }
-    .ctrl-btn svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-    #btn-zi, #btn-zo, #btn-center {
-      background: var(--ctrl-bg); border: 1.5px solid var(--ctrl-border); color: var(--ctrl-icon);
-      backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
-    }
-    #btn-zi:hover, #btn-zo:hover, #btn-center:hover { background: var(--surface-raised); }
-    #btn-locate { background: var(--gold); color: #0e1118; }
-    #btn-locate:hover { box-shadow: 0 6px 24px rgba(201,151,58,0.60); }
-    #btn-locate.tracking { background: var(--blue-dot); color: #ffffff; box-shadow: 0 6px 24px rgba(25,118,210,0.55); }
-
-    /* ══════════════════════════════════════════════
-       PANEL (bottom sheet → sidebar on desktop)
-    ═════════════════════════════════════════════════ */
-    #panel {
-      position: absolute; left: 0; right: 0; bottom: 0;
-      z-index: 950; max-height: 84vh;
-      transform: translateY(100%); transition: transform 0.38s var(--ease);
-      display: flex; flex-direction: column; pointer-events: none;
-    }
-    #panel.open { transform: translateY(0); pointer-events: all; }
-
-    .panel-inner {
-      background: var(--panel-bg); border-radius: 22px 22px 0 0;
-      border-top: 1.5px solid var(--border);
-      box-shadow: 0 -16px 60px rgba(0,0,0,0.65);
-      display: flex; flex-direction: column; overflow: hidden; flex: 1;
-    }
-    body.light .panel-inner { box-shadow: 0 -6px 30px rgba(13,27,62,0.14); }
-
-    .panel-handle-row { display: flex; justify-content: center; padding: 12px 0 6px; flex-shrink: 0; }
-    .panel-handle { width: 38px; height: 4px; border-radius: 2px; background: var(--border); }
-
-    .panel-hero { height: 108px; position: relative; overflow: hidden; flex-shrink: 0; }
-    .panel-hero-bg { position: absolute; inset: 0; }
-    .panel-hero-pattern {
-      position: absolute; inset: 0;
-      background-image: radial-gradient(circle, rgba(255,255,255,0.04) 1px, transparent 1px);
-      background-size: 22px 22px;
-    }
-    /* Neon accent stripe on hero */
-    .panel-hero::after {
-      content: ''; position: absolute; bottom: 0; left: 0; right: 0;
-      height: 2px; background: linear-gradient(90deg, transparent, var(--neon), transparent);
-      opacity: 0.55;
-    }
-    .panel-hero-content { position: absolute; inset: 0; padding: 14px 18px; display: flex; flex-direction: column; justify-content: flex-end; }
-    .panel-badge { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 50px; font-size: 10px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 6px; width: fit-content; color: #fff; }
-    .panel-name   { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 700; color: #ffffff; line-height: 1.1; }
-    .panel-common { font-size: 12px; color: rgba(255,255,255,0.50); margin-top: 3px; }
-
-    .panel-close {
-      position: absolute; top: 12px; right: 14px; width: 30px; height: 30px; border-radius: 50%; border: none;
-      background: rgba(0,0,0,0.30); color: #fff; cursor: pointer; display: grid; place-items: center; z-index: 5; transition: background 0.18s;
-    }
-    .panel-close:hover { background: rgba(0,0,0,0.50); }
-    .panel-close svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2.5; stroke-linecap: round; }
-
-    .panel-body { overflow-y: auto; flex: 1; padding: 16px 18px 28px; -webkit-overflow-scrolling: touch; }
-    .panel-body::-webkit-scrollbar { width: 4px; }
-    .panel-body::-webkit-scrollbar-track { background: transparent; }
-    .panel-body::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 2px; }
-
-    .panel-tabs { display: flex; gap: 4px; margin-bottom: 16px; background: var(--surface-alt); padding: 4px; border-radius: 10px; }
-    .tab-btn { flex: 1; padding: 8px 4px; border: none; cursor: pointer; border-radius: 7px; font-family: 'DM Sans', sans-serif; font-size: 11.5px; font-weight: 600; color: var(--panel-tab-text); background: transparent; transition: background 0.2s, color 0.2s; white-space: nowrap; }
-    .tab-btn.active { background: var(--panel-tab-active); color: var(--panel-tab-active-text); }
-    .tab-panel { display: none; }
-    .tab-panel.active { display: block; }
-
-    /* About tab */
-    .info-section { margin-bottom: 16px; }
-    .info-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--gold); margin-bottom: 6px; }
-    .info-text  { font-size: 13.5px; color: var(--text-secondary); line-height: 1.75; }
-
-    /* Student tips tab */
-    .student-card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 12px; padding: 14px; margin-bottom: 16px; }
-    .student-card-header { display: flex; align-items: center; gap: 8px; font-size: 11px; font-weight: 700; color: var(--neon); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
-    .student-card-header svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
-    .student-card p { font-size: 13px; color: var(--text-secondary); line-height: 1.68; }
-
-    /* Quick facts tab */
-    .quick-facts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; }
-    .fact-chip { background: var(--chip-bg); border: 1px solid var(--chip-border); border-radius: 10px; padding: 10px 12px; }
-    .fact-chip-label { font-size: 10px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; }
-    .fact-chip-value { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-top: 3px; }
-
-    /* Library / Resources tab */
-    .res-section-title { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.10em; color: var(--gold); margin: 0 0 8px; }
-    .res-list { margin-bottom: 18px; }
-    .res-item {
-      display: flex; align-items: center; gap: 11px;
-      padding: 10px 12px; border-radius: 10px;
-      border: 1px solid var(--res-border); background: var(--res-bg);
-      margin-bottom: 6px; cursor: pointer;
-      transition: background 0.15s, border-color 0.15s;
-      text-decoration: none;
-    }
-    .res-item:hover { background: var(--res-hover); border-color: rgba(204,255,0,0.25); }
-    .res-item:last-child { margin-bottom: 0; }
-    .res-icon { width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; font-size: 16px; flex-shrink: 0; }
-    .res-icon.handout { background: rgba(204,255,0,0.10); }
-    .res-icon.pq      { background: rgba(25,118,210,0.12); }
-    .res-icon.guide   { background: rgba(201,151,58,0.12); }
-    .res-title { font-size: 12.5px; font-weight: 600; color: var(--text-primary); line-height: 1.3; }
-    .res-sub   { font-size: 10.5px; color: var(--text-secondary); margin-top: 2px; }
-    .res-badge {
-      margin-left: auto; flex-shrink: 0; font-size: 9.5px; font-weight: 700;
-      padding: 2px 7px; border-radius: 50px; text-transform: uppercase; letter-spacing: 0.05em;
-    }
-    .res-badge.pdf  { background: rgba(239,83,80,0.16); color: #ef5350; }
-    .res-badge.link { background: rgba(204,255,0,0.12); color: #99cc00; }
-    .res-empty { font-size: 13px; color: var(--text-secondary); text-align: center; padding: 22px 0; opacity: 0.7; }
-
-    /* Shared action buttons */
-    .panel-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 4px; }
-    .action-btn { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 13px; border-radius: 12px; border: none; cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600; transition: opacity 0.18s, transform 0.18s; }
-    .action-btn:active { transform: scale(0.96); opacity: 0.82; }
-    .action-btn svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
-    .action-primary   { background: var(--maroon-b); color: #fff; }
-    .action-secondary { background: var(--surface-alt); border: 1.5px solid var(--border); color: var(--text-secondary); }
-
-    /* ══════════════════════════════════════════════
-       DESKTOP SIDEBAR
-    ═════════════════════════════════════════════════ */
-    @media (min-width: 640px) {
-      #panel { left: 16px; right: auto; bottom: 16px; top: 78px; width: 370px; max-height: calc(100vh - 94px); transform: translateX(-120%); transition: transform 0.38s var(--ease); }
-      #panel.open { transform: translateX(0); }
-      .panel-inner { border-radius: var(--radius-lg); }
-      .panel-handle-row { display: none; }
-      #legend { bottom: 90px; }
-      #controls { bottom: 90px; }
-    }
-
-    /* ══════════════════════════════════════════════
-       LOCATION ERROR BANNER
-    ═════════════════════════════════════════════════ */
-    #loc-error {
-      position: absolute; bottom: 216px; left: 50%;
-      transform: translateX(-50%) translateY(24px);
-      z-index: 960; max-width: 320px; width: calc(100% - 40px);
-      background: var(--err-bg); border: 1.5px solid var(--err-border); color: var(--err-text);
-      padding: 14px 18px; border-radius: var(--radius); font-size: 13px; line-height: 1.58;
-      box-shadow: var(--shadow-lg); opacity: 0; pointer-events: none;
-      transition: opacity 0.32s, transform 0.32s; text-align: center;
-    }
-    #loc-error.show { opacity: 1; transform: translateX(-50%) translateY(0); pointer-events: all; }
-    #loc-error-close { display: inline-block; margin-top: 9px; font-size: 11px; font-weight: 700; cursor: pointer; color: var(--gold); text-transform: uppercase; letter-spacing: 0.07em; }
-
-    /* ══════════════════════════════════════════════
-       TOAST
-    ═════════════════════════════════════════════════ */
-    #toast {
-      position: absolute; bottom: 216px; left: 50%;
-      transform: translateX(-50%) translateY(16px);
-      z-index: 961; background: var(--toast-bg); color: var(--toast-text);
-      padding: 10px 20px; border-radius: 50px; font-size: 13px; font-weight: 500;
-      border: 1px solid var(--toast-border); box-shadow: var(--shadow); opacity: 0;
-      pointer-events: none; white-space: nowrap; max-width: calc(100vw - 40px);
-      overflow: hidden; text-overflow: ellipsis;
-      transition: opacity 0.28s, transform 0.28s;
-    }
-    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-  </style>
+/* TOAST */
+#toast{
+  position:fixed;bottom:90px;left:50%;transform:translateX(-50%);
+  background:var(--bg-surface);color:var(--text-1);
+  padding:10px 22px;border-radius:24px;font-size:13px;font-weight:500;
+  white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .25s;
+  z-index:3000;box-shadow:var(--shadow);max-width:90vw;text-overflow:ellipsis;overflow:hidden;
+}
+#toast.show{opacity:1}
+#toast.mint{background:rgba(67,217,173,0.18);color:var(--mint);border:1px solid rgba(67,217,173,0.3)}
+</style>
 </head>
 <body>
 
-<div id="map"></div>
-<div id="map-overlay"></div>
-
-<!-- ADMIN BADGE -->
-<div id="admin-badge">
-  <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
-  <span>Admin Mode — Click map to copy coords</span>
+<!-- LOADING SCREEN -->
+<div id="loading-screen">
+  <div class="loader-inner" id="loader-inner">
+    <div class="loader-compass">
+      <svg width="60" height="60" viewBox="0 0 60 60" fill="none">
+        <circle cx="30" cy="30" r="27" stroke="#1C4D8D" stroke-width="2.5"/>
+        <circle cx="30" cy="30" r="3.5" fill="#0AC4E0"/>
+        <line x1="30" y1="5" x2="30" y2="10" stroke="#0AC4E0" stroke-width="2.5" stroke-linecap="round"/>
+        <line x1="30" y1="50" x2="30" y2="55" stroke="#4988C4" stroke-width="2" stroke-linecap="round"/>
+        <line x1="5" y1="30" x2="10" y2="30" stroke="#4988C4" stroke-width="2" stroke-linecap="round"/>
+        <line x1="50" y1="30" x2="55" y2="30" stroke="#4988C4" stroke-width="2" stroke-linecap="round"/>
+        <polygon points="30,8 26.5,28 30,26.5 33.5,28" fill="#0AC4E0"/>
+        <polygon points="30,52 26.5,32 30,33.5 33.5,32" fill="#4988C4"/>
+      </svg>
+    </div>
+    <div class="loader-brand">BUK Navigate</div>
+    <div class="loader-sub">Old Site</div>
+    <div class="loader-bar-wrap"><div class="loader-bar-fill" id="loader-bar"></div></div>
+  </div>
 </div>
 
-<!-- HEADER -->
-<div id="header">
-  <div class="header-row">
-    <div class="logo">
-      <span class="logo-mark">🛰</span>
-      <div>
-        <div class="logo-text">BUK Nav</div>
-        <div class="logo-sub">Old Site</div>
-      </div>
+<!-- APP -->
+<div id="app">
+
+  <!-- HEADER -->
+  <header id="app-header">
+    <div class="hdr-brand">
+      <span class="hdr-brand-name">BUK Navigate</span>
+      <span class="hdr-brand-sub">Old Site</span>
     </div>
-    <div class="search-wrap">
-      <input type="text" id="search-input" placeholder="Search buildings, faculties…" autocomplete="off" spellcheck="false" />
-      <div class="search-icon"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
-      <div id="search-results"></div>
-    </div>
-    <div class="hdr-btns">
-      <button class="hdr-btn" id="theme-btn" aria-label="Toggle UI theme">
-        <svg id="theme-icon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+    <div class="hdr-right">
+      <button class="hdr-btn" id="search-btn" onclick="openSearch()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      </button>
+      <button class="hdr-btn" id="theme-btn" onclick="toggleTheme()"></button>
+      <button class="hdr-btn" id="menu-btn" onclick="openMenu()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="1" fill="currentColor"/><circle cx="12" cy="12" r="1" fill="currentColor"/><circle cx="12" cy="19" r="1" fill="currentColor"/></svg>
       </button>
     </div>
-  </div>
-</div>
+  </header>
 
-<!-- LEGEND -->
-<div id="legend">
-  <div class="legend-title">Map Guide</div>
-  <div class="legend-row"><div class="lg-poly"></div><span>Building</span></div>
-  <div class="legend-row"><div class="lg-poly-active"></div><span>Selected</span></div>
-  <div class="legend-row"><div class="lg-dot-blue"></div><span>You are here</span></div>
-  <div class="lg-zoom-hint" id="zoom-hint">
-    <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
-    <span>Zoom in for labels</span>
-  </div>
-</div>
+  <!-- MAP -->
+  <div id="map"></div>
 
-<!-- FLOATING CONTROLS -->
-<div id="controls">
-  <button class="ctrl-btn" id="btn-zi" aria-label="Zoom in">
-    <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-  </button>
-  <button class="ctrl-btn" id="btn-zo" aria-label="Zoom out">
-    <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/></svg>
-  </button>
-  <button class="ctrl-btn" id="btn-center" aria-label="Centre on BUK">
-    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><line x1="12" y1="1" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="1" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="23" y2="12"/><circle cx="12" cy="12" r="2" fill="currentColor" stroke="none"/></svg>
-  </button>
-  <button class="ctrl-btn" id="btn-locate" aria-label="Locate me">
-    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="8" stroke-dasharray="3 2"/></svg>
-  </button>
-</div>
+  <!-- RETURN BUTTON -->
+  <button id="return-btn" onclick="returnToOldSite()">&#8592; Back to Old Site</button>
 
-<!-- PANEL -->
-<div id="panel">
-  <div class="panel-inner">
-    <div class="panel-handle-row"><div class="panel-handle"></div></div>
-    <div class="panel-hero">
-      <div class="panel-hero-bg" id="panel-hero-bg"></div>
-      <div class="panel-hero-pattern"></div>
-      <div class="panel-hero-content">
-        <div class="panel-badge" id="panel-badge"></div>
-        <div class="panel-name"  id="panel-name"></div>
-        <div class="panel-common" id="panel-common"></div>
-      </div>
-      <button class="panel-close" id="panel-close" aria-label="Close panel">
-        <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+  <!-- GPS FAB -->
+  <button id="gps-fab" onclick="toggleGPS()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="8" stroke-dasharray="3 2"/></svg>
+  </button>
+
+  <!-- PRECACHE FAB -->
+  <button id="precache-fab" onclick="triggerPrecache()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+  </button>
+
+  <!-- SEARCH OVERLAY -->
+  <div id="search-overlay">
+    <div class="search-bar">
+      <button class="search-back" onclick="closeSearch()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
       </button>
+      <input id="search-input" type="search" autocomplete="off" spellcheck="false" placeholder="Search buildings, departments, courses&#8230;">
     </div>
+    <div class="search-results-list" id="search-results"></div>
+  </div>
 
-    <div class="panel-body">
-      <div class="panel-tabs">
-        <button class="tab-btn active" data-tab="about">About</button>
-        <button class="tab-btn"        data-tab="tips">Tips</button>
-        <button class="tab-btn"        data-tab="facts">Facts</button>
-        <button class="tab-btn"        data-tab="library">Library</button>
-      </div>
+  <!-- BUILDING BOTTOM SHEET -->
+  <div id="building-sheet">
+    <div class="sheet-handle-wrap" id="sheet-handle"><div class="sheet-handle"></div></div>
+    <div id="sheet-content"></div>
+  </div>
 
-      <!-- ABOUT -->
-      <div class="tab-panel active" id="tab-about">
-        <div class="info-section">
-          <div class="info-label">Description</div>
-          <div class="info-text" id="panel-desc"></div>
-        </div>
-        <div class="panel-actions">
-          <button class="action-btn action-primary" id="btn-navigate">
-            <svg viewBox="0 0 24 24"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>Navigate
-          </button>
-          <button class="action-btn action-secondary" id="btn-share">
-            <svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>Share
-          </button>
-        </div>
-      </div>
-
-      <!-- TIPS -->
-      <div class="tab-panel" id="tab-tips">
-        <div class="student-card">
-          <div class="student-card-header">
-            <svg viewBox="0 0 24 24"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
-            Student Tip
-          </div>
-          <p id="panel-students"></p>
-        </div>
-        <div class="panel-actions">
-          <button class="action-btn action-primary" id="btn-navigate2">
-            <svg viewBox="0 0 24 24"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>Navigate
-          </button>
-          <button class="action-btn action-secondary" id="btn-save">
-            <svg viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>Save
-          </button>
-        </div>
-      </div>
-
-      <!-- FACTS -->
-      <div class="tab-panel" id="tab-facts">
-        <div class="quick-facts" id="panel-facts"></div>
-        <div class="panel-actions">
-          <button class="action-btn action-primary" id="btn-navigate3">
-            <svg viewBox="0 0 24 24"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>Navigate
-          </button>
-          <button class="action-btn action-secondary" id="btn-share2">
-            <svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>Share
-          </button>
-        </div>
-      </div>
-
-      <!-- LIBRARY — Handouts / Past Questions -->
-      <div class="tab-panel" id="tab-library">
-        <div id="panel-resources"></div>
-        <div class="panel-actions" style="margin-top:8px">
-          <button class="action-btn action-primary" id="btn-navigate4">
-            <svg viewBox="0 0 24 24"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>Navigate
-          </button>
-          <button class="action-btn action-secondary" id="btn-share3">
-            <svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>Share
-          </button>
-        </div>
+  <!-- AKTH MODAL -->
+  <div id="akth-modal" onclick="handleAKTHBackdrop(event)">
+    <div class="akth-card">
+      <div class="akth-badge">Off-Campus</div>
+      <h3 class="akth-title" id="akth-title">Department at AKTH</h3>
+      <p class="akth-body" id="akth-body"></p>
+      <div class="akth-actions">
+        <button class="btn-mint" onclick="navigateToAKTH()">Navigate to AKTH</button>
+        <button class="btn-ghost" onclick="closeAKTHModal()">Cancel</button>
       </div>
     </div>
   </div>
+
+  <!-- LIBRARY OVERLAY -->
+  <div class="fs-overlay" id="library-overlay">
+    <div class="ov-header">
+      <button class="ov-back" onclick="closeOverlay('library-overlay')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
+      <span class="ov-title">Library Resources</span>
+    </div>
+    <div class="ov-body" id="library-body"></div>
+  </div>
+
+  <!-- ABOUT OVERLAY -->
+  <div class="fs-overlay" id="about-overlay">
+    <div class="ov-header">
+      <button class="ov-back" onclick="closeOverlay('about-overlay')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
+      <span class="ov-title">About</span>
+    </div>
+    <div class="ov-body">
+      <p class="about-tagline">Navigating BUK shouldn&#39;t be stressful.</p>
+      <div class="about-section">
+        <div class="about-text">Built for the BUK community &#8212; because getting lost on your own campus before a test is a problem no one should have to face.</div>
+      </div>
+      <div class="about-section">
+        <div class="about-heading">Built on Mobile</div>
+        <div class="about-text">Every line of code, every mapped building, and every interface decision was engineered from a phone. No desktop setup. Just persistence and code.</div>
+      </div>
+      <div class="about-section">
+        <div class="about-heading">Why it&#39;s different</div>
+        <div class="about-point"><div class="about-point-dot"></div><div class="about-text">Zero hassle &#8212; pinpoint navigation to faculties, labs, and lecture halls without asking anyone for directions.</div></div>
+        <div class="about-point"><div class="about-point-dot"></div><div class="about-text">Offline-first &#8212; built to work when the network does not cooperate.</div></div>
+        <div class="about-point"><div class="about-point-dot"></div><div class="about-text">Built for us &#8212; every detail shaped around how BUK students actually navigate campus.</div></div>
+      </div>
+      <div class="about-footer">
+        Made with <span class="about-heart">&#x1F49A;</span> and code &#8212; with love from Seun.<br>
+        <span class="about-ver">V1.00 &#8212; more features dropping soon</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- MENU DRAWER -->
+  <div id="menu-backdrop" onclick="closeMenu()"></div>
+  <div id="menu-drawer">
+    <div class="menu-handle-wrap" onclick="closeMenu()"><div class="menu-handle"></div></div>
+    <div class="menu-item" onclick="openOverlay('library-overlay');closeMenu()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+      Library Resources
+    </div>
+    <div class="menu-item" onclick="openOverlay('about-overlay');closeMenu()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      About BUK Navigate
+    </div>
+  </div>
+
+  <!-- TOAST -->
+  <div id="toast"></div>
 </div>
 
-<div id="loc-error" role="alert">
-  <div id="loc-error-msg"></div>
-  <div id="loc-error-close" role="button" tabindex="0">Dismiss</div>
-</div>
-<div id="toast" role="status" aria-live="polite"></div>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/fuse.js/7.0.0/fuse.min.js"></script>
 <script>
-'use strict';
-
-/* ══════════════════════════════════════════════
-   LANDMARK DATA  (English only, simplified keys)
-   ─────────────────────────────────────────────
-   entranceCoord — where the dot/pulse pin lands
-   labelCoord    — where the zoom-gated text label sits
-   resources     — Library tab: handouts, PQs, guides
-   Each resource: { type, icon, title, sub, url, badge }
-═════════════════════════════════════════════════ */
-const bukLandmarks = [
-  {
-    id: 'fais',
-    category: 'Faculty',
-    emoji: '📚',
-    color: '#c9973a',
-    heroBg: 'linear-gradient(135deg,#7a5a1a,#1e3168)',
-    name: 'Faculty of Arts & Islamic Studies',
-    commonName: 'FAIS Building',
-    desc: 'Home to departments of Arabic, Islamic Studies, History, and English Language. One of BUK\'s oldest faculties, known for its landmark arched entrance and serene courtyard.',
-    students: 'Exit through the east door for a 3-minute shortcut to the Main Library. Timetable boards are posted at the main archway every Monday morning. The ground-floor café opens at 7:30 AM.',
-    facts: [
-      { label:'Founded',     value:'1977' },
-      { label:'Departments', value:'6'    },
-      { label:'Category',    value:'Faculty' },
-      { label:'Zone',        value:'North Block' }
-    ],
-    entranceCoord: { lat:11.98135, lng:8.47400 },
-    labelCoord:    [ 11.98150, 8.47400 ],
-    resources: [
-      { type:'handout', icon:'📄', title:'Arabic Language I — Lecture Notes',     sub:'GST 101 · Dr. Umar Farouk',          url:'#', badge:'PDF'  },
-      { type:'handout', icon:'📄', title:'Islamic Studies Handout Pack',           sub:'ISS 201 · Dr. Aisha Mohammed',       url:'#', badge:'PDF'  },
-      { type:'pq',      icon:'📝', title:'History of West Africa — Past Questions', sub:'HIS 301 · 2019–2023',               url:'#', badge:'PDF'  },
-      { type:'pq',      icon:'📝', title:'English Comprehension PQ Bank',          sub:'ENG 102 · 2018–2023',               url:'#', badge:'PDF'  },
-      { type:'guide',   icon:'🔗', title:'FAIS Reading List 2024/25',              sub:'Faculty Academic Calendar',          url:'#', badge:'Link' }
-    ]
-  },
-  {
-    id: 'convo',
-    category: 'Venue',
-    emoji: '🎓',
-    color: '#a8293e',
-    heroBg: 'linear-gradient(135deg,#7b1d2e,#0d1b3e)',
-    name: 'Convocation Arena',
-    commonName: 'The Convo',
-    desc: 'The grand outdoor arena serving as BUK\'s ceremonial heart. Hosts annual convocation, presidential visits, public lectures, and inter-faculty competitions throughout the academic year.',
-    students: 'Arrive at least 45 minutes early for convocation ceremonies — the car park fills within the first 20 minutes. The east entrance has significantly shorter queues than the main gate. Seating is allocated by faculty.',
-    facts: [
-      { label:'Capacity',  value:'~5,000'        },
-      { label:'Type',      value:'Outdoor Arena'  },
-      { label:'Category',  value:'Venue'          },
-      { label:'Zone',      value:'Central'        }
-    ],
-    entranceCoord: { lat:11.97975, lng:8.47610 },
-    labelCoord:    [ 11.98000, 8.47610 ],
-    resources: [
-      { type:'guide', icon:'📅', title:'Academic Calendar 2024/25',      sub:'BUK Registry — Key Dates',        url:'#', badge:'PDF'  },
-      { type:'guide', icon:'🔗', title:'Convocation Ceremony Guidelines', sub:'Student Affairs Office',          url:'#', badge:'Link' }
-    ]
-  },
-  {
-    id: 'library',
-    category: 'Library',
-    emoji: '📖',
-    color: '#1e88e5',
-    heroBg: 'linear-gradient(135deg,#1565c0,#162348)',
-    name: 'Central Library',
-    commonName: 'Main Library',
-    desc: 'A multi-storey academic library housing thousands of volumes, bound journals, research theses, and digital resources. The primary research hub for all BUK students across every faculty.',
-    students: 'Bring your student ID card — it\'s required for entry. The 2nd floor reading room is the quietest area. Printing costs ₦10 per page. Opening hours: 8 AM – 9 PM weekdays, 9 AM – 5 PM Saturdays.',
-    facts: [
-      { label:'Floors',   value:'4'          },
-      { label:'Open',     value:'8 AM – 9 PM' },
-      { label:'Category', value:'Library'    },
-      { label:'Zone',     value:'West Block'  }
-    ],
-    entranceCoord: { lat:11.97930, lng:8.47305 },
-    labelCoord:    [ 11.97948, 8.47305 ],
-    resources: [
-      { type:'handout', icon:'📄', title:'Research Methods — Complete Notes',      sub:'RES 401 · Compiled by Students\' Union', url:'#', badge:'PDF'  },
-      { type:'handout', icon:'📄', title:'Academic Writing Style Guide',           sub:'BUK Library Services',                  url:'#', badge:'PDF'  },
-      { type:'pq',      icon:'📝', title:'General Studies I — PQ Compilation',     sub:'GST 101–103 · 2018–2023',               url:'#', badge:'PDF'  },
-      { type:'pq',      icon:'📝', title:'Use of English PQ Bank',                 sub:'GNS 102 · 5-Year Collection',            url:'#', badge:'PDF'  },
-      { type:'guide',   icon:'🔗', title:'E-Library Access Portal',                sub:'Remote access with student ID',          url:'#', badge:'Link' },
-      { type:'guide',   icon:'🔗', title:'Inter-Library Loan Request Form',        sub:'BUK — ABU — UNIMAID Network',            url:'#', badge:'Link' }
-    ]
-  },
-  {
-    id: 'sms',
-    category: 'Faculty',
-    emoji: '🏛',
-    color: '#c9973a',
-    heroBg: 'linear-gradient(135deg,#7a5a1a,#1e3168)',
-    name: 'Faculty of Social & Management Sciences',
-    commonName: 'SMS Faculty',
-    desc: 'Hosts Economics, Business Administration, Political Science, Sociology, and Mass Communication departments. A modern multi-level complex with a dedicated postgraduate wing and seminar suites.',
-    students: 'The ground-floor lounge has strong campus WiFi and is open until 10 PM — ideal for evening group work. Check the Dean\'s noticeboard at the main entrance for scholarship deadlines and departmental announcements.',
-    facts: [
-      { label:'Founded',     value:'1981'       },
-      { label:'Departments', value:'5'          },
-      { label:'Category',    value:'Faculty'    },
-      { label:'Zone',        value:'East Block'  }
-    ],
-    entranceCoord: { lat:11.98170, lng:8.47820 },
-    labelCoord:    [ 11.98200, 8.47820 ],
-    resources: [
-      { type:'handout', icon:'📄', title:'Microeconomics I — Full Notes Pack',       sub:'ECO 101 · Dr. Suleiman Kano',         url:'#', badge:'PDF'  },
-      { type:'handout', icon:'📄', title:'Introduction to Political Science',        sub:'POL 101 · Lecture Slides Compiled',   url:'#', badge:'PDF'  },
-      { type:'pq',      icon:'📝', title:'Business Administration PQ Bank',          sub:'BUS 201–203 · 2019–2023',             url:'#', badge:'PDF'  },
-      { type:'pq',      icon:'📝', title:'Mass Communication PQ Collection',         sub:'MCM 301 · 2018–2023',                url:'#', badge:'PDF'  },
-      { type:'guide',   icon:'🔗', title:'SMS Departmental E-Resources Hub',         sub:'Journals, datasets, case studies',    url:'#', badge:'Link' }
-    ]
-  },
-  {
-    id: 'vc',
-    category: 'Office',
-    emoji: '🏢',
-    color: '#388e3c',
-    heroBg: 'linear-gradient(135deg,#2e6b31,#162348)',
-    name: "Vice Chancellor's Office",
-    commonName: "VC's Office",
-    desc: 'Central administrative nucleus of Bayero University Kano. Houses the Vice Chancellor, Deputy VCs, Registrar, and key management offices. Surrounded by well-maintained institutional grounds.',
-    students: 'For admin queries — transcripts, deferral letters, bursary claims — use the ground-floor help desk. Best time to visit is between 9–11 AM on weekdays. Smart dress (no shorts or sleeveless tops) is expected.',
-    facts: [
-      { label:'Type',     value:'Administration' },
-      { label:'Hours',    value:'8 AM – 4 PM'    },
-      { label:'Category', value:'Office'         },
-      { label:'Zone',     value:'Central'        }
-    ],
-    entranceCoord: { lat:11.98062, lng:8.47488 },
-    labelCoord:    [ 11.98079, 8.47488 ],
-    resources: [
-      { type:'guide', icon:'📄', title:'Student Transcript Request Form',    sub:'Registry — Certified Copies',           url:'#', badge:'PDF'  },
-      { type:'guide', icon:'📄', title:'Deferral & Leave of Absence Form',   sub:'Academic Affairs Division',             url:'#', badge:'PDF'  },
-      { type:'guide', icon:'🔗', title:'Bursary Award Application Portal',   sub:'Student Financial Services',            url:'#', badge:'Link' },
-      { type:'guide', icon:'🔗', title:'BUK Student Portal (myBUK)',         sub:'Results, timetables, fee payment',      url:'#', badge:'Link' }
-    ]
-  }
+/* =====================================================
+   BUILDING DATA (59 buildings, GeoJSON [lng,lat])
+   ===================================================== */
+var BUILDINGS=[
+{id:'amina-namadi-sambo-hall',name:'Amina Namadi Sambo Hall',alias:'Female Hostel',type:'hostel',desc:'Female student residential hostel.',courses:[],coords:[[8.475921766179027,11.980506549964673],[8.47588522088759,11.980249533166031],[8.475633640098067,11.980283764161982],[8.475670185390555,11.980540780928024]]},
+{id:'faculty-of-basic-medical-sciences',name:'Faculty of Basic Medical Sciences',alias:'',type:'lecture',desc:'Main faculty building for Basic Medical Sciences. Serves preclinical medical students.',courses:['Medicine & Surgery','Dentistry & Dental Surgery','Medical Laboratory Science','Nursing','Optometry','Physiotherapy','Radiography'],coords:[[8.4758883,11.9802475],[8.4759246,11.9804961],[8.4756163,11.9805269],[8.4755905,11.9802841]]},
+{id:'department-of-anatomy',name:'Department of Anatomy',alias:'',type:'lab',desc:'Houses the Anatomy department including dissection labs and lecture rooms.',courses:['Anatomy'],coords:[[8.4768887,11.9801031],[8.4769347,11.9803386],[8.476743,11.9806214],[8.4764681,11.98066],[8.4762197,11.9804455],[8.47616,11.980171],[8.4763699,11.9799401],[8.4766605,11.979894]]},
+{id:'new-twin-theatres',name:'New Twin Theatres',alias:'NTT',type:'theatre',desc:'Twin lecture theatres used for large-capacity faculty lectures.',courses:[],coords:[[8.4759762,11.9795358],[8.476024,11.9799229],[8.4760477,11.9799488],[8.4758642,11.9800147],[8.4758112,11.9795669]]},
+{id:'department-of-human-physiology',name:'Department of Human Physiology',alias:'Physiology Dept',type:'lab',desc:'Physiology department with labs and lecture rooms.',courses:['Physiology'],coords:[[8.4765187,11.97879],[8.4767335,11.9789518],[8.476774,11.9792331],[8.4766011,11.9794779],[8.4762961,11.9795206],[8.476103,11.9793569],[8.4760512,11.9790365],[8.4762494,11.9788303]]},
+{id:'sani-zahradeen-lecture-theatre',name:'Sani Zahradeen Lecture Theatre',alias:'SZLT',type:'theatre',desc:'Major lecture theatre on the Old Site.',courses:[],coords:[[8.477017393983942,11.978108005153231],[8.47673598457601,11.978156093403015],[8.476802335244571,11.978527648979437],[8.47708374465094,11.97847956079508]]},
+{id:'joc-ezeilo-twin-theatres',name:'JOC Ezeilo Twin Theatres',alias:'',type:'theatre',desc:'Twin lecture theatres named after Prof. J.O.C. Ezeilo.',courses:[],coords:[[8.477366127518678,11.979298158936615],[8.477504602976865,11.979298158936615],[8.477504602976865,11.978857126594747],[8.477366127518678,11.978857126594747]]},
+{id:'old-physics-laboratory',name:'Old Physics Laboratory',alias:'',type:'lab',inactive:true,desc:'Former physics laboratory. Currently not in active use.',courses:[],coords:[[8.477952132634584,11.979140653288113],[8.47801724533332,11.979028203898679],[8.47776771395516,11.978889939590914],[8.477702601256482,11.979002389037888]]},
+{id:'physics-laboratory',name:'Physics Laboratory',alias:'',type:'lab',desc:'Active physics laboratory for practical sessions.',courses:['Physics','Electronics & Physics'],coords:[[8.478318719037816,11.979374442314423],[8.47828369666729,11.979106435032762],[8.478153233,11.97912274917934],[8.478188255370469,11.979390756444886]]},
+{id:'centre-of-biotechnology-research',name:'Centre of Biotechnology Research',alias:'CBR',type:'research',desc:'Research facility dedicated to biotechnology and applied sciences.',courses:[],coords:[[8.477970690303408,11.980405489699237],[8.47787240835035,11.979952943550472],[8.477662300770334,11.979996607756078],[8.477760582722397,11.980449153831643]]},
+{id:'central-laboratory-complex',name:'Central Laboratory Complex',alias:'CLC',type:'lab',desc:'Multi-disciplinary laboratory serving several science departments.',courses:[],coords:[[8.47813534635182,11.98013580448223],[8.478121775903958,11.97994214508175],[8.478248644780393,11.979933637934082],[8.478262215228284,11.980127297342023]]},
+{id:'biology-department-mosque',name:'Biology Department Mosque',alias:'',type:'mosque',desc:'Mosque serving students and staff of the biology cluster.',courses:[],coords:[[8.478370700934107,11.978750354240745],[8.478413897016083,11.978625672693],[8.478279836097329,11.97858122779678],[8.478236640015325,11.978705909365019]]},
+{id:'biology-botanical-garden',name:'Biology Botanical Garden',alias:'',type:'outdoor',desc:'Campus botanical garden maintained by the biology faculty.',courses:[],coords:[[8.4792987,11.9777081],[8.4786827,11.9777427],[8.4787745,11.9783439],[8.4790453,11.9783193],[8.4790415,11.9784654],[8.4793336,11.9783423]]},
+{id:'department-of-microbiology',name:'Department of Microbiology',alias:'Microbiology Dept',type:'lab',desc:'Houses the Microbiology department with labs and classrooms.',courses:['Microbiology'],coords:[[8.4802628,11.9783719],[8.480234,11.9785422],[8.4799802,11.9786525],[8.4798445,11.9786079],[8.4799426,11.9781485],[8.4800918,11.9782013]]},
+{id:'yaradua-classes',name:'Yaradua Classes',alias:'Yaradua 1, 2 & 3',type:'lecture',desc:'Three classrooms used primarily as examination and test venues.',courses:[],coords:[[8.4779475,11.9795956],[8.4779527,11.9797138],[8.4777092,11.9797094],[8.4775936,11.9796105],[8.4775813,11.9793882],[8.4776948,11.9792493],[8.4779328,11.9792421],[8.4779357,11.9793548],[8.4776815,11.9793733],[8.4776967,11.9795954]]},
+{id:'senior-biology-laboratory',name:'Senior Biology Laboratory',alias:'',type:'lab',desc:'Senior-level biology laboratory for advanced practical sessions.',courses:['Biology','Biological Sciences','Applied Biology'],coords:[[8.4784118,11.9780158],[8.4784365,11.9781532],[8.4781372,11.9781657],[8.4781303,11.9781663],[8.4781305,11.9781666],[8.4781186,11.9780551],[8.478119,11.9780555],[8.4782278,11.9780338]]},
+{id:'dept-of-plant-science-annex',name:'Dept. of Plant Science & Biotechnology Annex',alias:'Plant Science Annex',type:'lab',desc:'Annex facility of the Plant Science and Biotechnology department.',courses:[],coords:[[8.4788269,11.9788878],[8.4788492,11.9790076],[8.478549,11.979037],[8.4785379,11.9789269]]},
+{id:'department-of-biology',name:'Department of Biology',alias:'Bio Dept',type:'lecture',desc:'Main Biology department building with offices and administrative facilities.',courses:['Biology','Biological Sciences','Applied Biology','Botany','Plant Biology'],coords:[[8.4787569,11.9779484],[8.4787852,11.9780778],[8.4784516,11.9781275],[8.4784304,11.9779764]]},
+{id:'department-of-mathematical-sciences',name:'Department of Mathematical Sciences',alias:'Maths Dept',type:'lecture',desc:'Houses the Mathematical Sciences department with lecture rooms and offices.',courses:['Mathematics','Statistics'],coords:[[8.479836,11.980054],[8.4798394,11.9801696],[8.4796841,11.9801784],[8.4797039,11.9804323],[8.4798762,11.9804127],[8.4798678,11.9805169],[8.4794209,11.9805717],[8.4793853,11.9800876]]},
+{id:'biology-laboratory',name:'Biology Laboratory',alias:'',type:'lab',desc:'Primary biology laboratory for undergraduate practicals.',courses:['Biology','Biological Sciences'],coords:[[8.478083,11.9781272],[8.4781179,11.9783308],[8.4777286,11.9783678],[8.4777062,11.9781546]]},
+{id:'new-biology-laboratory',name:'New Biology Laboratory',alias:'',type:'lab',desc:'Newer biology laboratory with modern equipment.',courses:['Biology'],coords:[[8.4792047,11.9787091],[8.4790137,11.978736],[8.4789803,11.9784428],[8.4791503,11.9784231]]},
+{id:'department-of-biology-classes',name:'Department of Biology Classes',alias:'Bio Lecture Block',type:'lecture',desc:'Dedicated lecture classroom block for the Biology department.',courses:['Biology','Biological Sciences','Applied Biology'],coords:[[8.4783175,11.9785275],[8.4788088,11.9784808],[8.4787837,11.978353],[8.478439,11.9784064],[8.4783971,11.9782379],[8.4782815,11.9782557]]},
+{id:'dept-of-plant-science-biotech',name:'Dept. of Plant Science & Biotechnology',alias:'Plant Science',type:'lab',desc:'Main facility for the Plant Science and Biotechnology department.',courses:['Botany','Plant Biology'],coords:[[8.4790482,11.9784499],[8.4790368,11.978325],[8.478767,11.978362],[8.4787757,11.9784785]]},
+{id:'dept-of-plant-science-workshop',name:'Dept. of Plant Science Workshop',alias:'',type:'lab',desc:'Workshop facility for Plant Science practical work.',courses:[],coords:[[8.4786285,11.9789019],[8.4785106,11.9789173],[8.4784755,11.9786503],[8.4785919,11.9786366]]},
+{id:'department-of-biochemistry',name:'Department of Biochemistry',alias:'BCH',type:'lab',desc:'Houses Biochemistry and also hosts Nutrition & Dietetics lectures.',courses:['Biochemistry','Nutrition & Dietetics'],coords:[[8.4807147,11.9794759],[8.4806918,11.9792519],[8.4808062,11.9792399],[8.4807764,11.9790345],[8.4806656,11.979038],[8.4806355,11.9787558],[8.4804897,11.9787659],[8.4804862,11.9788817],[8.48016,11.9789215],[8.4802437,11.9795321]]},
+{id:'dept-of-chemistry-annex',name:'Dept. of Pure & Industrial Chemistry Annex',alias:'Chemistry Annex',type:'lab',desc:'Annex facility of the Pure and Industrial Chemistry department.',courses:[],coords:[[8.4795205,11.9778909],[8.4793412,11.9778872],[8.4793143,11.978585],[8.4794826,11.9785953]]},
+{id:'dept-of-environmental-health-science',name:'Dept. of Environmental Health Science',alias:'EHS Complex',type:'lab',desc:'Complex housing the Environmental Health Science department.',courses:['Environmental Health Science'],coords:[[8.478933,11.9792823],[8.4789058,11.979027],[8.4785219,11.9790791],[8.4785431,11.9793331]]},
+{id:'dept-of-biochemistry-annex',name:'Dept. of Biochemistry Annex',alias:'BCH Classes',type:'lecture',desc:'Lecture annex for Biochemistry. Also used by Nutrition & Dietetics students.',courses:['Biochemistry','Nutrition & Dietetics'],coords:[[8.4799436,11.9790403],[8.479824,11.9790444],[8.4798236,11.9787083],[8.4799459,11.9787086]]},
+{id:'department-of-physics',name:'Department of Physics',alias:'Physics Dept',type:'lecture',desc:'Main Physics department building with lecture halls and offices.',courses:['Physics','Electronics & Physics'],coords:[[8.4804497,11.9797478],[8.4804324,11.9795949],[8.479572,11.9796852],[8.4795854,11.9799271],[8.4798893,11.9798876],[8.4799032,11.9800975],[8.4801262,11.9800967],[8.4800828,11.9797883]]},
+{id:'dept-of-physics-new-classes',name:'Dept. of Physics New Classes',alias:'PNC',type:'lecture',desc:'New classroom block for the Physics department.',courses:['Physics'],coords:[[8.480459,11.9797708],[8.4804725,11.9799529],[8.480234,11.9799683],[8.4802298,11.9798586],[8.480327,11.9798392],[8.480323,11.9797799]]},
+{id:'college-of-natural-pharm-sciences',name:'College of Natural & Pharmaceutical Sciences',alias:'Provost Office',type:'admin',desc:'Administrative hub of the College. Houses the Office of the Provost.',courses:[],coords:[[8.4786982,11.9769064],[8.4786352,11.9771645],[8.4781942,11.9770418],[8.4782401,11.9768029]]},
+{id:'faculty-of-physical-sciences',name:'Faculty of Physical Sciences',alias:'',type:'lecture',desc:'Faculty building serving Physics, Chemistry, Mathematics and related sciences.',courses:['Physics','Chemistry','Mathematics','Statistics','Electronics & Physics'],coords:[[8.4787866,11.9768175],[8.4788712,11.9766454],[8.4784604,11.9764629],[8.4783807,11.9766244]]},
+{id:'female-hostels',name:'Female Hostels',alias:'Nana Hall & others',type:'hostel',desc:'Female student residential hostels including Nana Hall and associated blocks.',courses:[],coords:[[8.4768947,11.9822955],[8.4774359,11.983004],[8.4773807,11.9836016],[8.4771468,11.9838858],[8.4767799,11.9838615],[8.4757981,11.9833255],[8.4757662,11.9824793],[8.47612,11.98241],[8.4760733,11.9817271],[8.4766247,11.9816497],[8.4767248,11.9823402]]},
+{id:'rmk-common-room',name:'Dr. Rabiu Musa Kwankaso Common Room',alias:'RMK Common Room',type:'services',desc:'Student common room facility.',courses:[],coords:[[8.4767117,11.9810621],[8.4767246,11.9811635],[8.4766785,11.9811739],[8.4766886,11.9812586],[8.4765739,11.9812677],[8.4765684,11.9811778],[8.4764988,11.9811928],[8.4764787,11.9810905]]},
+{id:'retail-shops',name:'Retail Shops',alias:'Yellow Container',type:'services',desc:'Row of retail shops. Commonly known as the Yellow Container.',courses:[],coords:[[8.4778686,11.9819834],[8.4778788,11.9821256],[8.477506,11.9821571],[8.4774877,11.9820114]]},
+{id:'sce-room-b-and-c',name:'SCE Room B and C',alias:'',type:'lecture',desc:'Lecture rooms B and C used for classes and assessments.',courses:[],coords:[[8.4773591,11.9812819],[8.4773349,11.9810572],[8.4768719,11.981126],[8.4768903,11.9813385]]},
+{id:'male-hostel-2',name:'Male Hostel 2',alias:'',type:'hostel',desc:'Male student residential hostel block 2.',courses:[],coords:[[8.4766323,11.9815952],[8.4766555,11.9818191],[8.4770889,11.9817298],[8.4770375,11.981385],[8.47659,11.9814314],[8.4765695,11.9812595],[8.4760741,11.9813102],[8.4761238,11.9816603]]},
+{id:'hostel-admin-office',name:'Hostel Admin Office',alias:'',type:'admin',desc:'Administrative office managing student hostel affairs.',courses:[],coords:[[8.4770019,11.9821866],[8.4769966,11.9821247],[8.4768887,11.9821367],[8.4768953,11.9821966]]},
+{id:'female-rest-area',name:'Female Rest Area',alias:'',type:'services',desc:'Dedicated rest area for female students.',courses:[],coords:[[8.4776719,11.982421],[8.4777084,11.982549],[8.477438,11.9826045],[8.4774032,11.9824633],[8.477478,11.9824355],[8.4774564,11.9822065],[8.4776047,11.9821808],[8.4776315,11.9824317]]},
+{id:'laudromart',name:'LaudroMart',alias:'',type:'services',desc:'Campus laundry and dry-cleaning services.',courses:[],coords:[[8.4777435,11.982653],[8.4779529,11.9826399],[8.4778737,11.9821658],[8.4776511,11.9821808],[8.4776727,11.982329]]},
+{id:'male-hostel-1',name:'Male Hostel 1',alias:'',type:'hostel',desc:'Male student residential hostel block 1.',courses:[],coords:[[8.4778299,11.9816629],[8.4787116,11.9815726],[8.4786505,11.9810465],[8.4786387,11.9809972],[8.4786385,11.9809977],[8.4782109,11.9810584],[8.4782008,11.9812505],[8.4777815,11.9813014]]},
+{id:'male-hostel-mosque',name:'Male Hostel Mosque',alias:'',type:'mosque',desc:'Mosque serving the male hostel residential area.',courses:[],coords:[[8.4788207,11.9820658],[8.4783196,11.9821221],[8.4782564,11.9816547],[8.4787749,11.9816093]]},
+{id:'common-room-restaurant',name:'Common Room & Restaurant',alias:'',type:'services',desc:'Student common room with restaurant facilities.',courses:[],coords:[[8.4782863,11.9809869],[8.4782108,11.9809953],[8.4782142,11.9810843],[8.478105,11.9810929],[8.4780981,11.9810068],[8.4780581,11.9810125],[8.4780435,11.9809044],[8.4782769,11.9808782]]},
+{id:'faculty-of-pharmaceutical-sciences',name:'Faculty of Pharmaceutical Sciences',alias:'Pharmacy Faculty',type:'lecture',desc:'Faculty building for Pharmaceutical Sciences.',courses:['Pharmacy'],coords:[[8.4798679,11.9824753],[8.4794329,11.9825211],[8.4794018,11.9823127],[8.4793204,11.9823212],[8.4793133,11.9822485],[8.4793935,11.9822374],[8.4793719,11.9820244],[8.4798057,11.9819849],[8.4798128,11.9820905],[8.4796375,11.9821098],[8.4796801,11.9823985],[8.4798474,11.982372]]},
+{id:'dept-of-pure-industrial-chemistry',name:'Dept. of Pure & Industrial Chemistry',alias:'Chemistry Dept',type:'lab',desc:'Main facility for the Pure and Industrial Chemistry department.',courses:['Chemistry','Industrial Chemistry'],coords:[[8.4797851,11.9815751],[8.4793128,11.9816332],[8.479283,11.9814186],[8.4791997,11.9814304],[8.4791779,11.9813365],[8.4792852,11.9813217],[8.479256,11.9810946],[8.4797306,11.9810533],[8.4797418,11.9811804],[8.4795399,11.9812096],[8.4795852,11.981479],[8.4797688,11.9814351]]},
+{id:'main-library',name:'Main Library',alias:'Central Library',type:'library',desc:'The main university library with print collections, reading rooms, and digital access.',courses:[],coords:[[8.480461,11.9820423],[8.4800773,11.9820986],[8.4799956,11.9815181],[8.4803833,11.9814708]]},
+{id:'bayero-cooperative-society',name:'Bayero Cooperative Society Limited',alias:'BUK Cooperative',type:'services',desc:'University cooperative society offering financial and retail services.',courses:[],coords:[[8.477986431088425,11.98210703825417],[8.47797131740137,11.981978805901178],[8.478190413503938,11.981954095819859],[8.4782055271898,11.982082328184603]]},
+{id:'asuu-buk-secretariat',name:'ASUU BUK Secretariat',alias:'',type:'admin',desc:'Secretariat of the Academic Staff Union of Universities, BUK chapter.',courses:[],coords:[[8.4803656,11.9819662],[8.4808777,11.9818898],[8.4809134,11.9824644],[8.4804246,11.982515]]},
+{id:'mahmoud-tukur-new-theatres',name:'Mahmoud Tukur New Theatres',alias:'MTNT',type:'theatre',desc:'Large twin lecture theatres on the Old Site.',courses:[],coords:[[8.4804174,11.9810209],[8.4804488,11.9813329],[8.4811281,11.9812491],[8.4810904,11.9809298]]},
+{id:'ssanu-secretariat',name:'Senior Staff Association of Nigerian Universities',alias:'SSANU',type:'admin',desc:'Administrative secretariat of the SSANU, BUK chapter.',courses:[],coords:[[8.4801183,11.982882],[8.4801389,11.9830701],[8.4800066,11.983089],[8.4799888,11.9829057]]},
+{id:'bayero-consultancy-service',name:'Bayero Consultancy Service',alias:'',type:'admin',desc:'University consultancy and professional services office.',courses:[],coords:[[8.479657612417668,11.98296096966375],[8.479683926038831,11.983162328671455],[8.479796097542561,11.98314830197829],[8.479769783921427,11.98294694296088]]},
+{id:'ih-umar-twin-theatres',name:'Ibrahim Halilu Umar Twin Theatres',alias:'I.H Umar',type:'theatre',desc:'Twin lecture theatres named after Ibrahim Halilu Umar.',courses:[],coords:[[8.4791106,11.9799685],[8.4791079,11.9799622],[8.4789268,11.9799805],[8.4789134,11.9799085],[8.4786558,11.9799468],[8.4786287,11.9797166],[8.478867,11.9796899],[8.4788877,11.9796877],[8.4788752,11.9796288],[8.4790753,11.9796215]]},
+{id:'multipurpose-laboratory',name:'Multipurpose Laboratory',alias:'Faculty of Science',type:'lab',desc:'Large multipurpose laboratory serving multiple science disciplines.',courses:[],coords:[[8.479066948521393,11.980482271179852],[8.47901477562121,11.98002977828709],[8.478666826278328,11.98006816862474],[8.478718999179648,11.980520661453156]]},
+{id:'faculty-of-life-sciences',name:'Faculty of Life Sciences',alias:'',type:'lecture',desc:'Faculty building for Life Sciences. Covers biology, biochemistry, microbiology and related disciplines.',courses:['Biology','Biological Sciences','Applied Biology','Botany','Plant Biology','Microbiology','Biochemistry'],coords:[[8.480315744536284,11.980492287508568],[8.480279656226628,11.980142631419355],[8.480154211685857,11.980155020801035],[8.480190299995513,11.980504676874219]]},
+{id:'first-pavilion',name:'First Pavilion',alias:'',type:'services',desc:'Outdoor pavilion for student gatherings and events.',courses:[],coords:[[8.478755984127247,11.983777363038456],[8.47885679790005,11.983777363038456],[8.47885679790005,11.983504543084578],[8.478755984127247,11.983504543084578]]},
+{id:'third-pavilion',name:'Third Pavilion',alias:'',type:'services',desc:'Outdoor pavilion for student gatherings and events.',courses:[],coords:[[8.4786968,11.9846062],[8.4787096,11.9843015],[8.4788314,11.9843043],[8.4788178,11.9846091]]},
+{id:'second-pavilion',name:'Second Pavilion',alias:'',type:'services',desc:'Outdoor pavilion for student gatherings and events.',courses:[],coords:[[8.478720922401124,11.984102359995106],[8.478848720340665,11.984102359995106],[8.478848720340665,11.983986963706727],[8.478720922401124,11.983986963706727]]},
+{id:'buk-solar-farm',name:'BUK Solar Farm',alias:'',type:'services',desc:'University solar energy installation providing supplementary power to campus.',courses:[],coords:[[8.4813414,11.9850272],[8.4806533,11.9849277],[8.4808226,11.9837553],[8.4809565,11.9837697],[8.481056,11.9831718],[8.4813688,11.9831983],[8.4813885,11.9833941],[8.4813885,11.9833969],[8.4817544,11.9837353]]},
+{id:'buk-sport-complex',name:'BUK Sport Complex',alias:'',type:'sports',desc:'University sports complex with fields and facilities for athletic activities.',courses:[],coords:[[8.4810639,11.9864098],[8.478016,11.9846161],[8.4780018,11.9831433],[8.4796135,11.982937],[8.479628,11.9832384],[8.4802843,11.9830821],[8.4802135,11.9828142],[8.4813119,11.9828016],[8.4813716,11.9831782],[8.4810658,11.9831482],[8.480661,11.9849158],[8.4813911,11.985073]]}
 ];
 
-/* ══════════════════════════════════════════════
-   BUILDING FOOTPRINTS
-   — Placeholder rectangles; refine with Admin Mode
-═════════════════════════════════════════════════ */
-const bukStructures = [
-  { id:'poly-fais',    landmarkId:'fais',    latlngs:[ [11.98165,8.47375],[11.98165,8.47425],[11.98135,8.47425],[11.98135,8.47375] ] },
-  { id:'poly-convo',   landmarkId:'convo',   latlngs:[ [11.98025,8.47565],[11.98025,8.47655],[11.97975,8.47655],[11.97975,8.47565] ] },
-  { id:'poly-library', landmarkId:'library', latlngs:[ [11.97965,8.47265],[11.97965,8.47345],[11.97930,8.47345],[11.97930,8.47265] ] },
-  { id:'poly-sms',     landmarkId:'sms',     latlngs:[ [11.98230,8.47775],[11.98230,8.47865],[11.98170,8.47865],[11.98170,8.47775] ] },
-  { id:'poly-vc',      landmarkId:'vc',      latlngs:[ [11.98095,8.47455],[11.98095,8.47520],[11.98062,8.47520],[11.98062,8.47455] ] }
+/* TYPE SYSTEM */
+var TYPE_COLORS={
+  lecture:'#0AC4E0',theatre:'#4988C4',lab:'#0992C2',
+  hostel:'#F6E7BC',mosque:'#43D9AD',admin:'#BDE8F5',
+  services:'#7BB3D8',library:'#F6E7BC',sports:'#43D9AD',
+  research:'#0AC4E0',outdoor:'#43D9AD'
+};
+var TYPE_LABELS={
+  lecture:'Faculty / Department',theatre:'Lecture Theatre',lab:'Laboratory',
+  hostel:'Student Hostel',mosque:'Mosque',admin:'Administrative',
+  services:'Student Services',library:'Library',sports:'Sports Facility',
+  research:'Research Centre',outdoor:'Outdoor / Garden'
+};
+
+/* AKTH */
+var AKTH_DATA={
+  perimeterCoords:[[8.556451,11.9608442],[8.5555402,11.962176],[8.5540259,11.9641517],[8.5529932,11.9653377],[8.5517518,11.9666385],[8.5508019,11.967413],[8.5502144,11.9676855],[8.548945,11.9669813],[8.5473594,11.966034],[8.5457802,11.9653748],[8.5500314,11.960603],[8.5527156,11.9593121],[8.5540638,11.9591211],[8.5554648,11.9598175],[8.5554708,11.9598093],[8.556451,11.9608442]],
+  center:[11.9632,8.5521]
+};
+var AKTH_COURSES=['dentistry','dental surgery','medical laboratory science','medicine & surgery','medicine and surgery','nursing','nursing science','optometry','physiotherapy','radiography'];
+
+/* CAMPUS */
+var CAMPUS_CENTER=[11.9809411,8.4754721];
+var CAMPUS_SW=[11.972,8.468];
+var CAMPUS_NE=[11.989,8.485];
+
+/* LIBRARY */
+var LIBRARY_DATA=[
+  {category:'Past Questions',items:[
+    {title:'BCH 201 \u2014 Biochemistry',meta:'2023/2024 session',url:null},
+    {title:'PHY 101 \u2014 General Physics',meta:'2023/2024 session',url:null},
+    {title:'BIO 101 \u2014 General Biology',meta:'2023/2024 session',url:null},
+    {title:'MTH 101 \u2014 Elementary Mathematics',meta:'2023/2024 session',url:null}
+  ]},
+  {category:'Textbooks & Reference',items:[
+    {title:'Biochemistry \u2014 Lehninger (8th Ed.)',meta:'PDF',url:null},
+    {title:'Campbell Biology (12th Ed.)',meta:'PDF',url:null},
+    {title:'University Physics \u2014 Young & Freedman',meta:'PDF',url:null}
+  ]},
+  {category:'Study Materials',items:[
+    {title:'Faculty of Life Sciences Study Pack',meta:'Compiled notes',url:null},
+    {title:'Pharmacy Course Outlines',meta:'2024/2025',url:null}
+  ]}
 ];
 
-/* ══════════════════════════════════════════════
-   FUSE.JS  (English-only search index)
-═════════════════════════════════════════════════ */
-const fuse = new Fuse(
-  bukLandmarks.map(l => ({ id:l.id, name:l.name, commonName:l.commonName, category:l.category })),
-  { threshold:0.4, includeScore:true,
-    keys:[{name:'name',weight:0.40},{name:'commonName',weight:0.35},{name:'category',weight:0.25}] }
-);
+/* =====================================================
+   APP STATE
+   ===================================================== */
+var map,userMarker,accuracyCircle,watchId;
+var isTracking=false,hasFlownToUser=false;
+var activeBuilding=null,routeControl=null;
+var akthLayers=[],isAKTHMode=false;
+var buildingLayers={},fuse=null,lrmAvailable=false;
 
-/* ══════════════════════════════════════════════
-   MAP INITIALISATION
-   ─────────────────────────────────────────────
-   Layer order (bottom → top):
-     1. ESRI World Imagery (satellite base)
-     2. CartoDB Labels-only pane (roads / place names)
-     3. Custom Leaflet panes: polygons, labels, markers
-═════════════════════════════════════════════════ */
-const BUK_CENTER = [11.9808, 8.4755];
-const BUK_ZOOM   = 17;
-const LABEL_ZOOM = 16;
+/* =====================================================
+   UTILITIES
+   ===================================================== */
+function geo2leaf(coords){return coords.map(function(p){return[p[1],p[0]];});}
+function centroid(ll){var a=0,b=0,n=ll.length;for(var i=0;i<n;i++){a+=ll[i][0];b+=ll[i][1];}return[a/n,b/n];}
 
-const map = L.map('map', { center:BUK_CENTER, zoom:BUK_ZOOM, zoomControl:false });
+var _toastTimer;
+function showToast(msg,mintStyle){
+  var t=document.getElementById('toast');
+  t.textContent=msg;
+  t.className='show'+(mintStyle?' mint':'');
+  clearTimeout(_toastTimer);
+  _toastTimer=setTimeout(function(){t.className='';},3000);
+}
+function setLoaderBar(pct){var b=document.getElementById('loader-bar');if(b)b.style.width=pct+'%';}
+function hideLoader(){
+  var el=document.getElementById('loading-screen');
+  if(el){el.classList.add('hidden');setTimeout(function(){el.style.display='none';},550);}
+}
 
-/* ── Satellite base layer ─────────────────────────── */
-const satTiles = L.tileLayer(
-  'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-  { attribution:'Tiles &copy; <a href="https://www.esri.com">Esri</a>, Maxar, GeoEye, Earthstar Geographics, CNES/Airbus DS, USDA, USGS, AeroGRID, IGN', maxZoom:19 }
-).addTo(map);
+/* =====================================================
+   THEME
+   ===================================================== */
+var SUN='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>';
+var MOON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
 
-/* ── Labels overlay — CartoDB Positron Labels only ── */
-/* We create a dedicated pane sitting above polygons and markers so that
-   road/place labels from the tile server always render on top. */
-map.createPane('labelsPane');
-map.getPane('labelsPane').style.zIndex = 650;
-map.getPane('labelsPane').style.pointerEvents = 'none';
-
-const labelsTiles = L.tileLayer(
-  'https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png',
-  { attribution:'&copy; <a href="https://carto.com/">CARTO</a>',
-    subdomains:'abcd', maxZoom:20, pane:'labelsPane', opacity:0.85 }
-).addTo(map);
-
-/* ══════════════════════════════════════════════
-   POLYGON STYLE SYSTEM
-   Neon yellow (#ccff00) stroke per spec.
-   idle   — dashed thin stroke, near-zero fill
-   hover  — solid stroke, light fill
-   active — solid stroke + glow, richer fill
-═════════════════════════════════════════════════ */
-const NEON = '#ccff00';
-
-function polyIdle()   { return { color:NEON, fillColor:NEON, fillOpacity:0.04, opacity:0.35, weight:2,   dashArray:'6 4', lineJoin:'round' }; }
-function polyHover()  { return { color:NEON, fillColor:NEON, fillOpacity:0.14, opacity:0.90, weight:2.5, dashArray:null,  lineJoin:'round' }; }
-function polyActive() { return { color:NEON, fillColor:NEON, fillOpacity:0.22, opacity:1,    weight:3,   dashArray:null,  lineJoin:'round' }; }
-
-/* Inject tooltip CSS */
-const _ttCSS = document.createElement('style');
-_ttCSS.textContent = `.buk-tt{background:var(--surface)!important;border:1.5px solid var(--border)!important;color:var(--text-primary)!important;border-radius:9px!important;padding:5px 12px!important;box-shadow:var(--shadow)!important;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;pointer-events:none}.buk-tt::before{display:none!important}`;
-document.head.appendChild(_ttCSS);
-
-/* Build polygon layers */
-let activeId     = null;
-let activeMarker = null;
-const polyLayers = [];
-
-bukStructures.forEach(s => {
-  const lm = bukLandmarks.find(x => x.id === s.landmarkId);
-  if (!lm) return;
-  const poly = L.polygon(s.latlngs, polyIdle()).addTo(map);
-  poly.bindTooltip(lm.commonName, { sticky:true, className:'buk-tt', opacity:1 });
-  poly.on('mouseover', () => { if (activeId !== lm.id) poly.setStyle(polyHover()); });
-  poly.on('mouseout',  () => { if (activeId !== lm.id) poly.setStyle(polyIdle()); });
-  poly.on('click',     e => { L.DomEvent.stopPropagation(e); activateBuilding(lm, 'click'); });
-  polyLayers.push({ poly, landmark:lm });
-});
-
-/* ══════════════════════════════════════════════
-   MARKER ICONS
-═════════════════════════════════════════════════ */
-function entranceDotIcon(color) {
-  return L.divIcon({
-    html: `<div class="entrance-dot" style="background:${color}"></div>`,
-    className:'', iconSize:[12,12], iconAnchor:[6,6]
+function initTheme(){
+  var t=localStorage.getItem('buk-theme')||'light';
+  applyTheme(t);
+}
+function applyTheme(t){
+  document.documentElement.setAttribute('data-theme',t);
+  var btn=document.getElementById('theme-btn');
+  if(btn)btn.innerHTML=t==='dark'?SUN:MOON;
+  var m=document.getElementById('meta-theme');
+  if(m)m.content=t==='dark'?'#0F2854':'#0B2D72';
+}
+function toggleTheme(){
+  var cur=document.documentElement.getAttribute('data-theme')||'light';
+  var next=cur==='dark'?'light':'dark';
+  localStorage.setItem('buk-theme',next);
+  applyTheme(next);
+  if(map)updateMapTileFilter(next);
+}
+function updateMapTileFilter(t){
+  document.querySelectorAll('.leaflet-tile-pane').forEach(function(p){
+    p.style.filter=t==='dark'?'brightness(0.72) saturate(1.1)':'';
   });
 }
 
-function searchPulseIcon(color) {
-  return L.divIcon({
-    html: `<div class="sp-wrap">
-             <div class="sp-ring" style="background:${color}44"></div>
-             <div class="sp-core" style="background:${color}"></div>
-           </div>`,
-    className:'', iconSize:[18,18], iconAnchor:[9,9]
+/* =====================================================
+   MAP
+   ===================================================== */
+function initMap(){
+  var bounds=L.latLngBounds(CAMPUS_SW,CAMPUS_NE);
+  map=L.map('map',{
+    center:CAMPUS_CENTER,zoom:16,
+    maxBounds:bounds,maxBoundsViscosity:0.92,
+    zoomControl:false,attributionControl:true,
+    minZoom:14,maxZoom:19
   });
+  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,attribution:'Tiles &copy; Esri'}).addTo(map);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png',{maxZoom:19,subdomains:'abcd',pane:'tooltipPane'}).addTo(map);
+  /* Campus perimeter */
+  var perim=[[11.9867,8.4811],[11.9858,8.4776],[11.9843,8.4720],[11.9828,8.4718],[11.9774,8.4720],[11.9746,8.4754],[11.9750,8.4820],[11.9780,8.4835],[11.9820,8.4833],[11.9855,8.4830],[11.9867,8.4811]];
+  L.polygon(perim,{color:'#0AC4E0',weight:2,dashArray:'7 5',fillOpacity:0.03,fillColor:'#0AC4E0',interactive:false}).addTo(map);
+  renderBuildings();
+  updateMapTileFilter(document.documentElement.getAttribute('data-theme')||'light');
 }
 
-/* ══════════════════════════════════════════════
-   ACTIVATE / DEACTIVATE BUILDING
-   source = 'click'  → static entrance dot
-   source = 'search' → pulsing ring
-═════════════════════════════════════════════════ */
-function _deactivateCurrentPoly() {
-  if (!activeId) return;
-  const e = polyLayers.find(p => p.landmark.id === activeId);
-  if (e) e.poly.setStyle(polyIdle());
-}
-
-function activateBuilding(lm, source) {
-  _deactivateCurrentPoly();
-  activeId = lm.id;
-
-  const entry = polyLayers.find(p => p.landmark.id === lm.id);
-  if (entry) entry.poly.setStyle(polyActive());
-
-  if (activeMarker) { map.removeLayer(activeMarker); activeMarker = null; }
-  const coord = [lm.entranceCoord.lat, lm.entranceCoord.lng];
-  const icon  = source === 'search' ? searchPulseIcon(lm.color) : entranceDotIcon(lm.color);
-  activeMarker = L.marker(coord, { icon, zIndexOffset:600, interactive:false }).addTo(map);
-
-  populatePanel(lm);
-  setTab('about');
-  panel.classList.add('open');
-  map.flyTo(coord, Math.max(map.getZoom(), 18), { duration:0.80 });
-}
-
-/* ══════════════════════════════════════════════
-   ZOOM-DEPENDENT BUILDING LABELS
-   Labels use a heavy black halo for satellite contrast.
-═════════════════════════════════════════════════ */
-const labelGroup = L.layerGroup();
-const labelDivs  = [];
-
-function buildLabels() {
-  labelGroup.clearLayers();
-  labelDivs.length = 0;
-  bukLandmarks.forEach(lm => {
-    const div = document.createElement('div');
-    div.className = 'buk-label';
-    div.textContent = lm.commonName;
-    const icon = L.divIcon({ html:div, className:'buk-label-wrap', iconSize:null, iconAnchor:[0,0] });
-    L.marker(lm.labelCoord, { icon, interactive:false, zIndexOffset:-200 }).addTo(labelGroup);
-    labelDivs.push(div);
-  });
-}
-
-function setLabelsVisible(v) { labelDivs.forEach(d => d.classList.toggle('visible', v)); }
-
-function updateLabelVisibility() {
-  const show     = map.getZoom() >= LABEL_ZOOM;
-  const isOnMap  = map.hasLayer(labelGroup);
-  document.getElementById('zoom-hint').style.display = show ? 'none' : 'flex';
-  if (show && !isOnMap) {
-    labelGroup.addTo(map);
-    requestAnimationFrame(() => requestAnimationFrame(() => setLabelsVisible(true)));
-  } else if (!show && isOnMap) {
-    setLabelsVisible(false);
-    setTimeout(() => { if (map.getZoom() < LABEL_ZOOM) map.removeLayer(labelGroup); }, 380);
-  }
-}
-
-map.on('zoomend', updateLabelVisibility);
-buildLabels();
-labelGroup.addTo(map);
-requestAnimationFrame(() => requestAnimationFrame(() => setLabelsVisible(true)));
-document.getElementById('zoom-hint').style.display = 'none';
-
-/* ══════════════════════════════════════════════
-   ADMIN MODE (?edit=true)
-   Coordinate picker — gold pin + clipboard copy
-═════════════════════════════════════════════════ */
-const ADMIN_MODE = new URLSearchParams(window.location.search).get('edit') === 'true';
-if (ADMIN_MODE) {
-  document.body.classList.add('admin-mode');
-  document.getElementById('admin-badge').classList.add('visible');
-  let adminPin = null;
-  map.on('click', e => {
-    const lat   = e.latlng.lat.toFixed(6);
-    const lng   = e.latlng.lng.toFixed(6);
-    const coord = `[${lat}, ${lng}]`;
-    const icon  = L.divIcon({ html:'<div class="admin-pin"></div>', className:'', iconSize:[12,12], iconAnchor:[6,6] });
-    if (adminPin) map.removeLayer(adminPin);
-    adminPin = L.marker([e.latlng.lat, e.latlng.lng], { icon, zIndexOffset:2000 }).addTo(map);
-    navigator.clipboard.writeText(coord).catch(()=>{});
-    showToast(`📋 Copied: ${coord}`);
-  });
-}
-
-/* ══════════════════════════════════════════════
-   LIVE LOCATION — Blue Dot + Accuracy Circle
-   Blue dot is the only permanent map element.
-═════════════════════════════════════════════════ */
-let blueDot=null, accCircle=null, watchId=null, firstFix=true;
-
-function blueDotIcon() {
-  return L.divIcon({
-    html:`<div class="bd-wrap"><div class="bd-ring"></div><div class="bd-core"></div></div>`,
-    className:'', iconSize:[20,20], iconAnchor:[10,10]
-  });
-}
-function onPosition(pos) {
-  const { latitude:lat, longitude:lng, accuracy } = pos.coords;
-  if (!blueDot) {
-    blueDot   = L.marker([lat,lng], { icon:blueDotIcon(), zIndexOffset:1000 }).addTo(map);
-    accCircle = L.circle([lat,lng], { radius:accuracy, color:'#1976d2', fillColor:'#1976d2', fillOpacity:0.07, weight:1.5, dashArray:'5 4' }).addTo(map);
-  } else {
-    blueDot.setLatLng([lat,lng]);
-    accCircle.setLatLng([lat,lng]);
-    accCircle.setRadius(accuracy);
-  }
-  if (firstFix) { map.flyTo([lat,lng], 18, { duration:1.1 }); showToast('📍 You are here!'); firstFix=false; }
-  else showToast('Position updated.');
-}
-function onPositionError(err) {
-  const msgs = { 1:'Location access denied. Enable permissions in browser settings.', 2:'Location unavailable. Make sure GPS is enabled.', 3:'Location timed out. Please try again.' };
-  showLocError(msgs[err.code] || 'Location unavailable.');
-  stopTracking();
-}
-function startTracking() {
-  if (!navigator.geolocation) { showLocError('Your browser does not support geolocation.'); return; }
-  firstFix = true;
-  showToast('Searching for your location…');
-  document.getElementById('btn-locate').classList.add('tracking');
-  watchId = navigator.geolocation.watchPosition(onPosition, onPositionError, { enableHighAccuracy:true, timeout:12000, maximumAge:3000 });
-}
-function stopTracking() {
-  if (watchId !== null) { navigator.geolocation.clearWatch(watchId); watchId = null; }
-  document.getElementById('btn-locate').classList.remove('tracking');
-}
-document.getElementById('btn-locate').addEventListener('click', () => {
-  if (watchId !== null) { stopTracking(); showToast('Live tracking stopped.'); } else startTracking();
-});
-
-/* ══════════════════════════════════════════════
-   CENTRE MAP
-═════════════════════════════════════════════════ */
-document.getElementById('btn-center').addEventListener('click', () => {
-  map.flyTo(BUK_CENTER, BUK_ZOOM, { duration:0.9 });
-  showToast('Centred on BUK Old Site.');
-});
-
-/* ══════════════════════════════════════════════
-   LOCATION ERROR BANNER
-═════════════════════════════════════════════════ */
-let errTimer;
-function showLocError(msg) {
-  const b = document.getElementById('loc-error');
-  document.getElementById('loc-error-msg').textContent = msg;
-  b.classList.add('show');
-  clearTimeout(errTimer);
-  errTimer = setTimeout(() => b.classList.remove('show'), 9000);
-}
-document.getElementById('loc-error-close').addEventListener('click',  () => document.getElementById('loc-error').classList.remove('show'));
-document.getElementById('loc-error-close').addEventListener('keydown', e => { if (e.key==='Enter'||e.key===' ') document.getElementById('loc-error').classList.remove('show'); });
-
-/* ══════════════════════════════════════════════
-   PANEL — populate, close, tab switching
-═════════════════════════════════════════════════ */
-const panel = document.getElementById('panel');
-
-function buildResourcesHTML(resources) {
-  if (!resources || !resources.length) {
-    return `<div class="res-empty">No resources available yet for this location.</div>`;
-  }
-  const handouts = resources.filter(r => r.type === 'handout');
-  const pqs      = resources.filter(r => r.type === 'pq');
-  const guides   = resources.filter(r => r.type === 'guide');
-  let html = '';
-  if (handouts.length) {
-    html += `<div class="res-section-title">📄 Handouts & Lecture Notes</div><div class="res-list">`;
-    handouts.forEach(r => {
-      html += `<a class="res-item" href="${r.url}" target="_blank" rel="noopener">
-        <div class="res-icon handout">${r.icon}</div>
-        <div style="flex:1;min-width:0"><div class="res-title">${r.title}</div><div class="res-sub">${r.sub}</div></div>
-        <span class="res-badge pdf">${r.badge}</span></a>`;
+/* =====================================================
+   BUILDINGS
+   ===================================================== */
+function renderBuildings(){
+  BUILDINGS.forEach(function(b){
+    var ll=geo2leaf(b.coords);
+    var col=TYPE_COLORS[b.type]||'#0AC4E0';
+    var poly=L.polygon(ll,{
+      color:col,weight:1.5,fillColor:col,
+      fillOpacity:b.inactive?0.08:0.18,
+      bubblingMouseEvents:false
     });
-    html += '</div>';
+    poly.on('click',function(){handleBuildingClick(b);});
+    poly.addTo(map);
+    buildingLayers[b.id]=poly;
+  });
+}
+function handleBuildingClick(b){
+  var c=centroid(geo2leaf(b.coords));
+  map.panTo(c,{animate:true,duration:0.4});
+  openBuildingSheet(b);
+}
+
+/* =====================================================
+   GPS
+   ===================================================== */
+function toggleGPS(){if(isTracking)stopGPS();else startGPS();}
+function startGPS(){
+  if(!navigator.geolocation){showToast('Geolocation not supported');return;}
+  isTracking=true;hasFlownToUser=false;
+  document.getElementById('gps-fab').classList.add('active');
+  watchId=navigator.geolocation.watchPosition(
+    function(p){
+      var ll=L.latLng(p.coords.latitude,p.coords.longitude);
+      placeUserDot(ll,p.coords.accuracy);
+      if(!hasFlownToUser){map.flyTo(ll,18,{duration:1.2});hasFlownToUser=true;}
+    },
+    function(e){console.warn('GPS:',e);stopGPS();showToast('Unable to get your location');},
+    {enableHighAccuracy:true,timeout:12000,maximumAge:5000}
+  );
+}
+function stopGPS(){
+  if(watchId!=null){navigator.geolocation.clearWatch(watchId);watchId=null;}
+  if(userMarker){map.removeLayer(userMarker);userMarker=null;}
+  if(accuracyCircle){map.removeLayer(accuracyCircle);accuracyCircle=null;}
+  isTracking=false;hasFlownToUser=false;
+  document.getElementById('gps-fab').classList.remove('active');
+}
+function placeUserDot(ll,acc){
+  var icon=L.divIcon({className:'',html:'<div class="gps-wrap"><div class="gps-ring"></div><div class="gps-dot"></div></div>',iconSize:[20,20],iconAnchor:[10,10]});
+  if(!userMarker){userMarker=L.marker(ll,{icon:icon,zIndexOffset:1000}).addTo(map);}
+  else{userMarker.setLatLng(ll);}
+  if(acc&&acc<8000){
+    if(!accuracyCircle){accuracyCircle=L.circle(ll,{radius:acc,color:'#0AC4E0',fillColor:'#43D9AD',fillOpacity:0.06,weight:1.5,opacity:0.4,interactive:false}).addTo(map);}
+    else{accuracyCircle.setLatLng(ll);accuracyCircle.setRadius(acc);}
   }
-  if (pqs.length) {
-    html += `<div class="res-section-title" style="margin-top:14px">📝 Past Questions</div><div class="res-list">`;
-    pqs.forEach(r => {
-      html += `<a class="res-item" href="${r.url}" target="_blank" rel="noopener">
-        <div class="res-icon pq">${r.icon}</div>
-        <div style="flex:1;min-width:0"><div class="res-title">${r.title}</div><div class="res-sub">${r.sub}</div></div>
-        <span class="res-badge pdf">${r.badge}</span></a>`;
-    });
-    html += '</div>';
+}
+
+/* =====================================================
+   SEARCH
+   ===================================================== */
+function initSearch(){
+  var items=BUILDINGS.map(function(b){return{id:b.id,name:b.name,alias:b.alias||'',courses:(b.courses||[]).join(' '),type:b.type};});
+  if(typeof Fuse!=='undefined'){
+    fuse=new Fuse(items,{keys:['name','alias','courses'],threshold:0.38,minMatchCharLength:2});
   }
-  if (guides.length) {
-    html += `<div class="res-section-title" style="margin-top:14px">🔗 Guides & Portals</div><div class="res-list">`;
-    guides.forEach(r => {
-      const badgeClass = r.badge === 'Link' ? 'link' : 'pdf';
-      html += `<a class="res-item" href="${r.url}" target="_blank" rel="noopener">
-        <div class="res-icon guide">${r.icon}</div>
-        <div style="flex:1;min-width:0"><div class="res-title">${r.title}</div><div class="res-sub">${r.sub}</div></div>
-        <span class="res-badge ${badgeClass}">${r.badge}</span></a>`;
-    });
-    html += '</div>';
-  }
-  return html;
+  var inp=document.getElementById('search-input');
+  inp.addEventListener('input',function(){handleSearch(this.value);});
+  inp.addEventListener('keydown',function(e){if(e.key==='Escape')closeSearch();});
 }
-
-function populatePanel(lm) {
-  document.getElementById('panel-name').textContent   = lm.name;
-  document.getElementById('panel-common').textContent = lm.commonName;
-  document.getElementById('panel-desc').textContent   = lm.desc;
-  document.getElementById('panel-students').textContent = lm.students;
-  const badge = document.getElementById('panel-badge');
-  badge.textContent = `${lm.emoji}  ${lm.category}`;
-  badge.style.cssText = `background:${lm.color}28;color:#fff;border:1px solid ${lm.color}70;`;
-  document.getElementById('panel-hero-bg').style.background = lm.heroBg;
-  document.getElementById('panel-facts').innerHTML = lm.facts.map(f =>
-    `<div class="fact-chip"><div class="fact-chip-label">${f.label}</div><div class="fact-chip-value">${f.value}</div></div>`
-  ).join('');
-  document.getElementById('panel-resources').innerHTML = buildResourcesHTML(lm.resources);
+function openSearch(){
+  document.getElementById('search-overlay').classList.add('open');
+  setTimeout(function(){document.getElementById('search-input').focus();},200);
 }
-
-function closePanel() {
-  panel.classList.remove('open');
-  _deactivateCurrentPoly();
-  activeId = null;
-  if (activeMarker) { map.removeLayer(activeMarker); activeMarker = null; }
+function closeSearch(){
+  document.getElementById('search-overlay').classList.remove('open');
+  document.getElementById('search-input').value='';
+  document.getElementById('search-results').innerHTML='';
 }
-
-document.getElementById('panel-close').addEventListener('click', closePanel);
-if (!ADMIN_MODE) {
-  map.on('click', () => { if (panel.classList.contains('open')) closePanel(); });
-}
-
-function setTab(name) {
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
-  document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === 'tab-' + name));
-}
-document.querySelectorAll('.tab-btn').forEach(btn => btn.addEventListener('click', () => setTab(btn.dataset.tab)));
-
-/* ══════════════════════════════════════════════
-   SEARCH — Fuse.js live fuzzy search
-   Search result click drops gold pulse marker.
-═════════════════════════════════════════════════ */
-const searchInput = document.getElementById('search-input');
-const searchBox   = document.getElementById('search-results');
-
-searchInput.addEventListener('input', () => {
-  const q = searchInput.value.trim();
-  searchBox.innerHTML = '';
-  if (!q) { searchBox.classList.remove('open'); return; }
-  const results = fuse.search(q).slice(0, 6);
-  if (!results.length) {
-    searchBox.innerHTML = `<div class="sr-empty">No buildings found. Try a different spelling.</div>`;
-    searchBox.classList.add('open');
+function handleSearch(q){
+  q=q.trim();
+  var res=document.getElementById('search-results');
+  if(!q){res.innerHTML='';return;}
+  var ql=q.toLowerCase();
+  var isAKTH=AKTH_COURSES.some(function(c){return ql.indexOf(c)!==-1||c.indexOf(ql)!==-1;});
+  if(isAKTH&&ql.length>2){openAKTHModal(q);return;}
+  var results=fuse?fuse.search(q).slice(0,8):BUILDINGS.filter(function(b){return b.name.toLowerCase().indexOf(ql)!==-1;}).slice(0,8).map(function(b){return{item:{id:b.id,name:b.name,type:b.type}};});
+  if(!results.length){
+    res.innerHTML='<div class="search-empty"><strong>No results found</strong>No building or department matching "'+q+'" was found on BUK Old Site.</div>';
     return;
   }
-  results.forEach(({ item, score }) => {
-    const lm  = bukLandmarks.find(x => x.id === item.id);
-    if (!lm) return;
-    const pct = Math.round((1 - score) * 100);
-    const div = document.createElement('div');
-    div.className = 'sr-item';
-    div.innerHTML = `<div class="sr-icon" style="background:${lm.color}1e">${lm.emoji}</div>
-      <div style="flex:1;min-width:0">
-        <div class="sr-name">${lm.name}</div>
-        <div class="sr-meta">${lm.category} · ${lm.commonName}</div>
-      </div>
-      <div class="sr-score">${pct}%</div>`;
-    div.addEventListener('click', () => {
-      searchInput.value = lm.name;
-      searchBox.classList.remove('open');
-      activateBuilding(lm, 'search');
-    });
-    searchBox.appendChild(div);
+  res.innerHTML=results.map(function(r){
+    var it=r.item;
+    var col=TYPE_COLORS[it.type]||'#0AC4E0';
+    var sub=TYPE_LABELS[it.type]||it.type;
+    return '<div class="search-item" onclick="selectBuilding(\''+it.id+'\')"><div class="type-dot" style="background:'+col+'"></div><div><div class="search-name">'+it.name+'</div><div class="search-sub">'+sub+'</div></div></div>';
+  }).join('');
+}
+function selectBuilding(id){
+  var b=BUILDINGS.find(function(x){return x.id===id;});
+  if(!b)return;
+  closeSearch();
+  var ll=geo2leaf(b.coords);
+  var c=centroid(ll);
+  map.flyTo(c,18,{duration:1.2});
+  var layer=buildingLayers[id];
+  if(layer){layer.setStyle({fillOpacity:0.55});setTimeout(function(){layer.setStyle({fillOpacity:b.inactive?0.08:0.18});},700);}
+  setTimeout(function(){openBuildingSheet(b);},900);
+}
+
+/* =====================================================
+   BUILDING SHEET
+   ===================================================== */
+function openBuildingSheet(b){
+  activeBuilding=b;
+  var col=TYPE_COLORS[b.type]||'#0AC4E0';
+  var hex28=col+'28';
+  var label=TYPE_LABELS[b.type]||b.type;
+  var html='<div class="sheet-toprow">'+
+    '<div class="type-badge" style="background:'+hex28+';color:'+col+'">'+label+'</div>'+
+    '<button class="sheet-close" onclick="closeBuildingSheet()">'+
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>'+
+    '<h2 class="sheet-name">'+b.name+'</h2>';
+  if(b.alias)html+='<div class="sheet-alias">Also known as: '+b.alias+'</div>';
+  if(b.inactive)html+='<div class="sheet-inactive"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> Not currently in active use</div>';
+  if(b.desc)html+='<p class="sheet-desc">'+b.desc+'</p>';
+  if(b.courses&&b.courses.length){
+    html+='<div class="courses-wrap"><div class="sheet-label">Courses here</div><div class="courses-list">'+
+      b.courses.map(function(c){return'<span class="course-pill">'+c+'</span>';}).join('')+'</div></div>';
+  }
+  html+='<div class="sheet-actions">'+
+    '<button class="btn-primary" onclick="startRoute()">'+
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>Directions</button>'+
+    '<button class="btn-secondary" onclick="shareBuilding()">'+
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>Share</button></div>';
+  document.getElementById('sheet-content').innerHTML=html;
+  document.getElementById('building-sheet').classList.add('open');
+}
+function closeBuildingSheet(){
+  var sh=document.getElementById('building-sheet');
+  sh.classList.remove('open');
+  sh.style.transform='';
+  if(routeControl&&map){map.removeControl(routeControl);routeControl=null;}
+  activeBuilding=null;
+}
+
+/* Sheet swipe-to-dismiss — initialised ONCE */
+function initSheetSwipe(){
+  var sheet=document.getElementById('building-sheet');
+  var handle=document.getElementById('sheet-handle');
+  var startY=0,dragging=false;
+  handle.addEventListener('touchstart',function(e){
+    if(!sheet.classList.contains('open'))return;
+    startY=e.touches[0].clientY;dragging=true;
+    sheet.style.transition='none';
+  },{passive:true});
+  document.addEventListener('touchmove',function(e){
+    if(!dragging)return;
+    var dy=e.touches[0].clientY-startY;
+    if(dy>0)sheet.style.transform='translateY('+dy+'px)';
+  },{passive:true});
+  document.addEventListener('touchend',function(e){
+    if(!dragging)return;
+    dragging=false;
+    sheet.style.transition='';
+    var dy=e.changedTouches[0].clientY-startY;
+    if(dy>110)closeBuildingSheet();
+    else sheet.style.transform='';
   });
-  searchBox.classList.add('open');
-});
+}
 
-document.addEventListener('click', e => {
-  if (!searchInput.contains(e.target) && !searchBox.contains(e.target)) searchBox.classList.remove('open');
-});
+/* =====================================================
+   SHARE
+   ===================================================== */
+function shareBuilding(){
+  if(!activeBuilding)return;
+  var url=location.origin+location.pathname+'?b='+activeBuilding.id;
+  if(navigator.share){navigator.share({title:activeBuilding.name,text:'Find '+activeBuilding.name+' on BUK Navigate',url:url}).catch(function(){});}
+  else if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(url).then(function(){showToast('Link copied!',true);}).catch(function(){fallbackCopy(url);});
+  } else{fallbackCopy(url);}
+}
+function fallbackCopy(text){
+  var el=document.createElement('textarea');
+  el.value=text;el.style.cssText='position:fixed;opacity:0;top:0;left:0;';
+  document.body.appendChild(el);el.select();
+  try{document.execCommand('copy');showToast('Link copied!',true);}catch(e){showToast('Copy: '+text);}
+  document.body.removeChild(el);
+}
 
-/* ══════════════════════════════════════════════
-   THEME TOGGLE — UI panels only
-   Satellite tiles do not change; only CSS vars flip.
-═════════════════════════════════════════════════ */
-let isLight = false;
-const themeIcon = document.getElementById('theme-icon');
-const SUN  = '<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>';
-const MOON = '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>';
+/* =====================================================
+   ROUTING
+   ===================================================== */
+function startRoute(){
+  if(!activeBuilding)return;
+  if(!lrmAvailable){showToast('Routing unavailable \u2014 check connection');return;}
+  if(!userMarker){showToast('Enable GPS first');return;}
+  if(routeControl){map.removeControl(routeControl);routeControl=null;}
+  var dest=centroid(geo2leaf(activeBuilding.coords));
+  routeControl=L.Routing.control({
+    waypoints:[userMarker.getLatLng(),L.latLng(dest[0],dest[1])],
+    router:L.Routing.osrmv1({serviceUrl:'https://router.project-osrm.org/route/v1',profile:'foot'}),
+    show:false,addWaypoints:false,routeWhileDragging:false,
+    createMarker:function(){return null;},
+    lineOptions:{styles:[{color:'#0AC4E0',weight:4,opacity:.85}]}
+  }).addTo(map);
+  closeBuildingSheet();
+  showToast('Finding route\u2026');
+}
 
-document.getElementById('theme-btn').addEventListener('click', () => {
-  isLight = !isLight;
-  document.body.classList.toggle('light', isLight);
-  themeIcon.innerHTML = isLight ? SUN : MOON;
-  /* Satellite tiles stay as-is.
-     CSS var --map-overlay transitions from dark tint to transparent. */
-});
+/* =====================================================
+   AKTH
+   ===================================================== */
+function openAKTHModal(course){
+  var cap=course.charAt(0).toUpperCase()+course.slice(1);
+  document.getElementById('akth-title').textContent=cap;
+  document.getElementById('akth-body').textContent=cap+' is offered at BUK, but the department is located at Aminu Kano Teaching Hospital (AKTH), approximately 7.5 km from the Old Site. Preclinical (Year 1-2) students take lectures here on the Old Site. For clinical years, navigate to the Faculty of Allied Health Sciences at AKTH.';
+  document.getElementById('akth-modal').classList.add('open');
+}
+function closeAKTHModal(){document.getElementById('akth-modal').classList.remove('open');}
+function handleAKTHBackdrop(e){if(e.target===document.getElementById('akth-modal'))closeAKTHModal();}
+function navigateToAKTH(){
+  closeAKTHModal();
+  map.setMaxBounds(null);
+  var perim=L.polygon(geo2leaf(AKTH_DATA.perimeterCoords),{color:'#43D9AD',weight:2,dashArray:'6 4',fillOpacity:0.05,fillColor:'#43D9AD',interactive:false}).addTo(map);
+  var fahs=L.circle(AKTH_DATA.center,{radius:120,color:'#F6E7BC',fillColor:'#F6E7BC',fillOpacity:0.22,weight:2}).addTo(map);
+  fahs.on('click',function(){
+    openBuildingSheet({id:'fahs-akth',name:'Faculty of Allied Health Sciences',alias:'FAHS \u2014 AKTH',type:'lecture',inactive:false,
+      desc:'Located within Aminu Kano Teaching Hospital (AKTH). Houses clinical departments for Physiotherapy, Nursing, Radiography, Optometry, Dentistry, Medical Lab Science, and Medicine & Surgery.',
+      courses:['Physiotherapy','Nursing','Nursing Science','Radiography','Optometry','Dentistry & Dental Surgery','Medical Laboratory Science','Medicine & Surgery'],
+      coords:[[8.552,11.9618],[8.554,11.9618],[8.554,11.9628],[8.552,11.9628]]});
+  });
+  akthLayers=[perim,fahs];isAKTHMode=true;
+  map.flyTo(AKTH_DATA.center,16,{duration:2.2});
+  document.getElementById('return-btn').style.display='block';
+  showToast('Viewing AKTH campus');
+}
+function returnToOldSite(){
+  akthLayers.forEach(function(l){map.removeLayer(l);});
+  akthLayers=[];isAKTHMode=false;
+  map.setMaxBounds(L.latLngBounds(CAMPUS_SW,CAMPUS_NE));
+  map.flyTo(CAMPUS_CENTER,16,{duration:2});
+  document.getElementById('return-btn').style.display='none';
+  if(activeBuilding&&activeBuilding.id==='fahs-akth')closeBuildingSheet();
+}
 
-/* ══════════════════════════════════════════════
-   ZOOM CONTROLS
-═════════════════════════════════════════════════ */
-document.getElementById('btn-zi').addEventListener('click', () => map.zoomIn());
-document.getElementById('btn-zo').addEventListener('click', () => map.zoomOut());
+/* =====================================================
+   MENU / OVERLAYS
+   ===================================================== */
+function openMenu(){document.getElementById('menu-drawer').classList.add('open');document.getElementById('menu-backdrop').classList.add('open');}
+function closeMenu(){document.getElementById('menu-drawer').classList.remove('open');document.getElementById('menu-backdrop').classList.remove('open');}
+function openOverlay(id){document.getElementById(id).classList.add('open');}
+function closeOverlay(id){document.getElementById(id).classList.remove('open');}
 
-/* ══════════════════════════════════════════════
-   ACTION BUTTONS
-═════════════════════════════════════════════════ */
-['btn-navigate','btn-navigate2','btn-navigate3','btn-navigate4']
-  .forEach(id => document.getElementById(id)?.addEventListener('click', () => showToast('GPS routing coming soon!')));
-['btn-share','btn-share2','btn-share3']
-  .forEach(id => document.getElementById(id)?.addEventListener('click', () => {
-    navigator.clipboard?.writeText(location.href).catch(()=>{});
-    showToast('Link copied to clipboard!');
-  }));
-document.getElementById('btn-save')?.addEventListener('click', () => showToast('Location bookmarked!'));
+/* =====================================================
+   LIBRARY
+   ===================================================== */
+function renderLibrary(){
+  document.getElementById('library-body').innerHTML=LIBRARY_DATA.map(function(cat){
+    return '<div class="lib-category"><div class="lib-cat-title">'+cat.category+'</div>'+
+      cat.items.map(function(it){
+        if(it.url)return'<a class="lib-item available" href="'+it.url+'" target="_blank" rel="noopener"><div class="lib-item-info"><div class="lib-item-title">'+it.title+'</div>'+(it.meta?'<div class="lib-item-meta">'+it.meta+'</div>':'')+' </div><div class="lib-open"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></div></a>';
+        return'<div class="lib-item"><div class="lib-item-info"><div class="lib-item-title">'+it.title+'</div>'+(it.meta?'<div class="lib-item-meta">'+it.meta+'</div>':'')+' </div><div class="lib-soon">Soon</div></div>';
+      }).join('')+'</div>';
+  }).join('');
+}
 
-/* ══════════════════════════════════════════════
-   TOAST
-═════════════════════════════════════════════════ */
-let toastTimer;
-function showToast(msg) {
-  const el = document.getElementById('toast');
-  el.textContent = msg;
-  el.classList.add('show');
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => el.classList.remove('show'), 3200);
+/* =====================================================
+   PRECACHE
+   ===================================================== */
+function triggerPrecache(){
+  if(!navigator.serviceWorker||!navigator.serviceWorker.controller){showToast('Offline mode not ready yet');return;}
+  var fab=document.getElementById('precache-fab');fab.classList.add('busy');
+  var b=map.getBounds();
+  navigator.serviceWorker.controller.postMessage({type:'PRECACHE_TILES',bounds:{n:b.getNorth(),s:b.getSouth(),e:b.getEast(),w:b.getWest()},zoomMin:14,zoomMax:18});
+  showToast('Downloading map for offline use\u2026');
+  setTimeout(function(){fab.classList.remove('busy');showToast('Map tiles cached!',true);},4500);
+}
+
+/* =====================================================
+   DEEP LINK
+   ===================================================== */
+function checkDeepLink(){
+  var bid=new URLSearchParams(location.search).get('b');
+  if(!bid)return;
+  var b=BUILDINGS.find(function(x){return x.id===bid;});
+  if(b)setTimeout(function(){selectBuilding(b.id);},600);
+}
+
+/* =====================================================
+   CDN LOADER — critical failure handled properly
+   ===================================================== */
+function loadScript(url,onOk,onFail){
+  var s=document.createElement('script');
+  s.src=url;s.async=true;
+  s.onload=function(){if(onOk)onOk();};
+  s.onerror=function(){
+    console.error('[BUK Navigate] CDN failed:',url);
+    if(onFail)onFail(url);
+  };
+  document.head.appendChild(s);
+}
+
+function showCriticalError(){
+  var el=document.getElementById('loading-screen');
+  if(!el)return;
+  el.style.transition='none';
+  document.getElementById('loader-inner').innerHTML=
+    '<div class="loader-error-icon">\uD83D\uDCE1</div>'+
+    '<div class="loader-brand">Connection Error</div>'+
+    '<div class="loader-error-msg">The map engine could not load.<br>Please check your internet connection and try again.</div>'+
+    '<button class="retry-btn" onclick="location.reload()">Retry</button>';
+}
+
+/* =====================================================
+   BOOT SEQUENCE
+   ===================================================== */
+initTheme();
+setLoaderBar(15);
+
+loadScript(
+  'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
+  function(){
+    setLoaderBar(45);
+    /* LRM optional — routing disabled gracefully if it fails */
+    loadScript(
+      'https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js',
+      function(){
+        lrmAvailable=true;
+        setLoaderBar(72);
+        loadScript(
+          'https://cdn.jsdelivr.net/npm/fuse.js@7.0.0/dist/fuse.min.js',
+          function(){setLoaderBar(90);initApp();},
+          function(){setLoaderBar(90);initApp();}/* Fuse optional */
+        );
+      },
+      function(){
+        /* LRM failed — continue without routing */
+        lrmAvailable=false;
+        setLoaderBar(72);
+        loadScript(
+          'https://cdn.jsdelivr.net/npm/fuse.js@7.0.0/dist/fuse.min.js',
+          function(){setLoaderBar(90);initApp();},
+          function(){setLoaderBar(90);initApp();}
+        );
+      }
+    );
+  },
+  function(){
+    /* Leaflet CRITICAL — cannot render map */
+    showCriticalError();
+  }
+);
+
+function initApp(){
+  initMap();
+  initSearch();
+  initSheetSwipe();/* registered once here, not on every sheet open */
+  renderLibrary();
+  checkDeepLink();
+  /* Service Worker */
+  if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost')){
+    navigator.serviceWorker.register('./sw.js').catch(function(e){console.warn('SW:',e);});
+  }
+  setLoaderBar(100);
+  setTimeout(hideLoader,350);
 }
 </script>
 </body>
