@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<meta name="theme-color" id="meta-theme" content="#0B2D72">
+<meta name="theme-color" id="meta-theme" content="#0AC4E0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="description" content="Campus navigation for Bayero University Kano Old Site">
@@ -16,21 +16,25 @@
 <title>BUK Navigate</title>
 <style>
 :root{
-  --bg-primary:#0B2D72;--bg-secondary:#1C4D8D;--bg-surface:#2860AA;
+  /* LIGHT THEME (default) — cream/white base, turquoise as the dominant accent */
+  --bg-primary:#FFFCF2;--bg-secondary:#FFFFFF;--bg-surface:#F6E7BC;
   --accent:#0AC4E0;--accent-mid:#0992C2;--accent-steel:#4988C4;
-  --mist:#BDE8F5;--cream:#F6E7BC;--mint:#43D9AD;
-  --text-1:#FFFFFF;--text-2:#BDE8F5;--text-3:rgba(189,232,245,0.55);
-  --border:rgba(189,232,245,0.15);
-  --shadow:0 4px 24px rgba(11,45,114,0.45);
-  --shadow-sm:0 2px 10px rgba(11,45,114,0.3);
-  --overlay:rgba(11,45,114,0.96);
-  --sheet-bg:#0B2D72;--header-bg:#0B2D72;
-  --input-bg:rgba(189,232,245,0.13);
-  --item-hover:rgba(189,232,245,0.08);
-  --pill-bg:rgba(189,232,245,0.14);
-  --scrollbar-thumb:rgba(189,232,245,0.3);
+  --mist:#E8F8FC;--cream:#F6E7BC;--mint:#1FB88E;
+  --text-1:#0B2D72;--text-2:#1C4D8D;--text-3:#5C7290;
+  --border:rgba(11,45,114,0.10);
+  --shadow:0 4px 24px rgba(11,45,114,0.12);
+  --shadow-sm:0 2px 10px rgba(11,45,114,0.08);
+  --overlay:rgba(255,252,242,0.97);
+  --sheet-bg:#FFFFFF;--header-bg:#0AC4E0;
+  --header-text:#0B2D72;
+  --input-bg:rgba(11,45,114,0.05);
+  --item-hover:rgba(11,45,114,0.06);
+  --pill-bg:rgba(10,196,224,0.12);
+  --scrollbar-thumb:rgba(11,45,114,0.22);
+  --on-accent:#0B2D72;
 }
 [data-theme="dark"]{
+  /* DARK THEME — navy base retained for low-light/battery use, turquoise stays the accent */
   --bg-primary:#0F2854;--bg-secondary:#0B2D72;--bg-surface:#1C4D8D;
   --accent:#0AC4E0;--accent-mid:#0992C2;--accent-steel:#4988C4;
   --mist:#BDE8F5;--cream:#F6E7BC;--mint:#43D9AD;
@@ -40,10 +44,12 @@
   --shadow-sm:0 2px 10px rgba(0,0,0,0.4);
   --overlay:rgba(15,40,84,0.97);
   --sheet-bg:#0A2248;--header-bg:#0F2854;
+  --header-text:#FFFFFF;
   --input-bg:rgba(189,232,245,0.07);
   --item-hover:rgba(189,232,245,0.05);
   --pill-bg:rgba(189,232,245,0.08);
   --scrollbar-thumb:rgba(189,232,245,0.18);
+  --on-accent:#0B2D72;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:var(--bg-primary)}
@@ -121,6 +127,20 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
   animation:gps-pulse 1.8s ease-out infinite;
 }
 @keyframes gps-pulse{0%{transform:scale(.6);opacity:1}100%{transform:scale(2.2);opacity:0}}
+
+/* BUILDING LABELS — sit on satellite tiles, not app chrome, so kept
+   theme-independent for guaranteed legibility against varied imagery */
+.building-label-icon{pointer-events:none;background:transparent!important;border:none!important}
+.building-label{
+  display:inline-block;white-space:nowrap;
+  font-family:'Inter',sans-serif;font-size:11px;font-weight:700;
+  color:#FFFFFF;background:rgba(11,45,114,0.78);
+  padding:3px 8px;border-radius:6px;
+  text-shadow:0 1px 2px rgba(0,0,0,0.4);
+  transform:translate(-50%,-50%);
+  letter-spacing:.1px;
+  box-shadow:0 1px 4px rgba(0,0,0,0.25);
+}
 
 /* FABS */
 #gps-fab,#precache-fab{
@@ -691,7 +711,7 @@ var map,userMarker,accuracyCircle,watchId;
 var isTracking=false,hasFlownToUser=false;
 var activeBuilding=null,routeControl=null;
 var akthLayers=[],isAKTHMode=false;
-var buildingLayers={},fuse=null,lrmAvailable=false;
+var buildingLayers={},buildingLabels={},fuse=null,lrmAvailable=false;
 
 /* =====================================================
    UTILITIES
@@ -728,7 +748,7 @@ function applyTheme(t){
   var btn=document.getElementById('theme-btn');
   if(btn)btn.innerHTML=t==='dark'?SUN:MOON;
   var m=document.getElementById('meta-theme');
-  if(m)m.content=t==='dark'?'#0F2854':'#0B2D72';
+  if(m)m.content=t==='dark'?'#0F2854':'#0AC4E0';
 }
 function toggleTheme(){
   var cur=document.documentElement.getAttribute('data-theme')||'light';
@@ -766,18 +786,101 @@ function initMap(){
 /* =====================================================
    BUILDINGS
    ===================================================== */
+/* Label priority — larger/more important building types win
+   collision conflicts over small service structures. Higher = wins. */
+var LABEL_PRIORITY={lecture:3,admin:3,hostel:2,sport:2,mosque:1,service:1};
+function labelPriority(b){
+  return (LABEL_PRIORITY[b.type]!==undefined?LABEL_PRIORITY[b.type]:1);
+}
+
 function renderBuildings(){
   BUILDINGS.forEach(function(b){
     var ll=geo2leaf(b.coords);
     var col=TYPE_COLORS[b.type]||'#0AC4E0';
     var poly=L.polygon(ll,{
-      color:col,weight:1.5,fillColor:col,
-      fillOpacity:b.inactive?0.08:0.18,
+      color:col,weight:0,fillColor:col,
+      fillOpacity:b.inactive?0.10:0.22,
       bubblingMouseEvents:false
     });
     poly.on('click',function(){handleBuildingClick(b);});
     poly.addTo(map);
     buildingLayers[b.id]=poly;
+
+    /* Zoom-gated, collision-avoided label. Created once, toggled
+       on/off the map by updateBuildingLabels() rather than
+       recreated, to keep pan/zoom cheap. */
+    var c=centroid(ll);
+    var label=L.marker(c,{
+      icon:L.divIcon({className:'building-label-icon',html:'<span class="building-label">'+_escLabel(b.name)+'</span>',iconSize:null}),
+      interactive:false,
+      keyboard:false,
+      pane:'markerPane'
+    });
+    buildingLabels[b.id]={marker:label,latlng:c,priority:labelPriority(b),name:b.name};
+  });
+  updateBuildingLabels();
+  map.on('zoomend moveend',_scheduleLabelUpdate);
+}
+var _labelUpdateTimer=null;
+function _scheduleLabelUpdate(){
+  /* Debounced — moveend fires repeatedly during inertial pan on
+     mobile; recomputing O(n) collision checks on every frame would
+     be wasteful on low-end devices. 120ms feels instant to users
+     but collapses dozens of rapid-fire events into one pass. */
+  clearTimeout(_labelUpdateTimer);
+  _labelUpdateTimer=setTimeout(updateBuildingLabels,120);
+}
+function _escLabel(s){
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+/* Show labels only at zoom >= LABEL_MIN_ZOOM, then resolve overlaps
+   in screen space: higher-priority (faculty/lecture/hostel) labels
+   claim space first; lower-priority labels that would collide stay
+   hidden until the user zooms in enough to separate them. */
+var LABEL_MIN_ZOOM=17;
+var LABEL_W=15;   // approx px per character at 11px bold Inter — conservative estimate
+var LABEL_H=22;   // approx rendered label height incl. padding
+var LABEL_PAD=4;  // minimum gap required between label boxes
+
+function updateBuildingLabels(){
+  var z=map.getZoom();
+  var entries=Object.keys(buildingLabels).map(function(id){return buildingLabels[id];});
+
+  if(z<LABEL_MIN_ZOOM){
+    entries.forEach(function(e){if(map.hasLayer(e.marker))map.removeLayer(e.marker);});
+    return;
+  }
+
+  // Project to screen space and estimate each label's bounding box
+  var boxes=entries.map(function(e){
+    var pt=map.latLngToContainerPoint(e.latlng);
+    var w=Math.max(36,e.name.length*LABEL_W*0.42)+LABEL_PAD*2; // rough text width
+    var h=LABEL_H+LABEL_PAD;
+    return {entry:e,pt:pt,w:w,h:h};
+  });
+
+  // Higher priority first; ties broken by shorter name (fits easier)
+  boxes.sort(function(a,b){
+    if(b.entry.priority!==a.entry.priority)return b.entry.priority-a.entry.priority;
+    return a.entry.name.length-b.entry.name.length;
+  });
+
+  var placed=[];
+  function overlaps(a,b){
+    return Math.abs(a.pt.x-b.pt.x)<(a.w+b.w)/2 && Math.abs(a.pt.y-b.pt.y)<(a.h+b.h)/2;
+  }
+
+  boxes.forEach(function(box){
+    var collides=placed.some(function(p){return overlaps(box,p);});
+    var marker=box.entry.marker;
+    var onMap=map.hasLayer(marker);
+    if(!collides){
+      placed.push(box);
+      if(!onMap)marker.addTo(map);
+    }else{
+      if(onMap)map.removeLayer(marker);
+    }
   });
 }
 function handleBuildingClick(b){
@@ -869,7 +972,7 @@ function selectBuilding(id){
   var c=centroid(ll);
   map.flyTo(c,18,{duration:1.2});
   var layer=buildingLayers[id];
-  if(layer){layer.setStyle({fillOpacity:0.55});setTimeout(function(){layer.setStyle({fillOpacity:b.inactive?0.08:0.18});},700);}
+  if(layer){layer.setStyle({fillOpacity:0.55});setTimeout(function(){layer.setStyle({fillOpacity:b.inactive?0.10:0.22});},700);}
   setTimeout(function(){openBuildingSheet(b);},900);
 }
 
