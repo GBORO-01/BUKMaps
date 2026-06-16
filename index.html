@@ -296,23 +296,111 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
 .ov-title{font-size:18px;font-weight:700;color:var(--text-1)}
 .ov-body{padding:20px 16px 80px}
 
-/* LIBRARY */
-.lib-category{margin-bottom:28px}
-.lib-cat-title{font-size:11px;font-weight:700;color:var(--text-3);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:12px}
-.lib-item{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:14px;background:var(--input-bg);border:1px solid var(--border);
-  border-radius:12px;margin-bottom:8px;text-decoration:none;
-  transition:background .12s;cursor:default;
+/* LIBRARY — HOME */
+.lib-search-wrap{position:sticky;top:0;background:var(--overlay);backdrop-filter:blur(20px);padding:12px 14px 10px;border-bottom:1px solid var(--border);z-index:10}
+.lib-search-bar{display:flex;align-items:center;gap:10px;background:var(--input-bg);border:1px solid var(--border);border-radius:12px;padding:10px 14px;transition:border-color .15s}
+.lib-search-bar:focus-within{border-color:var(--accent)}
+.lib-search-bar svg{width:17px;height:17px;color:var(--text-3);flex-shrink:0}
+.lib-search-input{flex:1;background:transparent;border:none;outline:none;font-family:'Inter',sans-serif;font-size:14px;color:var(--text-1)}
+.lib-search-input::placeholder{color:var(--text-3)}
+.lib-search-clear{width:28px;height:28px;border:none;border-radius:8px;background:var(--pill-bg);color:var(--text-3);cursor:pointer;align-items:center;justify-content:center;flex-shrink:0}
+.lib-search-clear svg{width:14px;height:14px}
+.lib-stats{display:flex;align-items:center;gap:8px;padding:10px 16px;border-bottom:1px solid var(--border)}
+.lib-stat{font-size:12px;color:var(--text-3)}.lib-stat strong{color:var(--accent)}
+.lib-stat-dot{width:3px;height:3px;border-radius:50%;background:var(--text-3);opacity:.5}
+
+/* LIBRARY — COURSE CARDS */
+.lib-course-card{
+  margin:12px 14px 0;padding:16px;background:var(--input-bg);
+  border:1px solid var(--border);border-radius:16px;cursor:pointer;
+  transition:background .12s,border-color .12s;
 }
-.lib-item.available{cursor:pointer}
-.lib-item.available:active{background:var(--item-hover)}
-.lib-item-info{flex:1}
-.lib-item-title{font-size:14px;font-weight:600;color:var(--text-1)}
-.lib-item-meta{font-size:12px;color:var(--text-3);margin-top:2px}
-.lib-soon{font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;background:rgba(189,232,245,0.1);color:var(--text-3);padding:3px 8px;border-radius:6px;flex-shrink:0}
-.lib-open{width:32px;height:32px;background:var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.lib-open svg{width:16px;height:16px;color:#0B2D72}
+.lib-course-card:active{background:var(--item-hover);border-color:var(--accent)}
+.lib-course-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
+.lib-course-code{font-size:11px;font-weight:800;letter-spacing:1.4px;color:var(--accent);text-transform:uppercase}
+.lib-course-arrow{color:var(--text-3)}
+.lib-course-arrow svg{width:16px;height:16px}
+.lib-course-name{font-size:15px;font-weight:700;color:var(--text-1);margin-bottom:2px;line-height:1.3}
+.lib-course-faculty{font-size:11px;color:var(--text-3);margin-bottom:10px}
+.lib-course-pills{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.lib-type-pill{font-size:11px;background:var(--pill-bg);color:var(--text-2);padding:3px 8px;border-radius:8px}
+.lib-course-progress{display:flex;align-items:center;gap:10px}
+.lib-progress-bar{flex:1;height:3px;background:var(--border);border-radius:2px;overflow:hidden}
+.lib-progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--mint));border-radius:2px;transition:width .4s ease}
+.lib-progress-label{font-size:10px;font-weight:600;color:var(--text-3);white-space:nowrap;flex-shrink:0}
+
+/* LIBRARY — COURSE DETAIL */
+.lib-course-header-strip{padding:16px 14px 14px;border-bottom:1px solid var(--border)}
+.lib-course-code-large{font-size:11px;font-weight:800;letter-spacing:1.6px;color:var(--accent);text-transform:uppercase;margin-bottom:4px}
+.lib-course-name-large{font-size:18px;font-weight:800;color:var(--text-1);line-height:1.25;margin-bottom:3px}
+.lib-course-faculty-large{font-size:12px;color:var(--text-3)}
+
+/* LIBRARY — TYPE SECTIONS */
+.lib-type-section{padding:0 14px;margin-bottom:4px}
+.lib-type-heading{display:flex;align-items:center;gap:8px;padding:14px 0 8px;font-size:11px;font-weight:700;color:var(--text-3);letter-spacing:1.1px;text-transform:uppercase;border-bottom:1px solid var(--border);margin-bottom:8px}
+.lib-type-icon{font-size:14px}
+.lib-type-count{margin-left:auto;background:var(--pill-bg);color:var(--accent);font-size:10px;font-weight:700;padding:2px 7px;border-radius:8px}
+
+/* LIBRARY — RESOURCE ROWS */
+.lib-resource{
+  display:flex;align-items:center;gap:12px;
+  padding:13px 0;border-bottom:1px solid var(--border);
+  cursor:default;
+}
+.lib-resource:last-child{border-bottom:none}
+.lib-resource.available{cursor:pointer}
+.lib-resource.available:active .lib-resource-title{color:var(--accent)}
+.lib-resource-info{flex:1;min-width:0}
+.lib-resource-title{font-size:14px;font-weight:600;color:var(--text-1);line-height:1.35;transition:color .12s}
+.lib-resource-meta{font-size:11px;color:var(--text-3);margin-top:2px}
+.lib-resource-action{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.lib-resource-action.download{background:var(--accent);color:#0B2D72}
+.lib-resource-action.external{background:var(--pill-bg);color:var(--accent)}
+.lib-resource-action svg{width:16px;height:16px}
+.lib-soon-badge{font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;background:rgba(189,232,245,0.08);color:var(--text-3);padding:3px 8px;border-radius:6px;flex-shrink:0;white-space:nowrap}
+
+/* LIBRARY — SEARCH RESULTS */
+.lib-search-results-label{font-size:11px;font-weight:700;color:var(--text-3);letter-spacing:.8px;padding:12px 14px 0;text-transform:uppercase}
+.lib-search-group{padding:0 14px;margin-bottom:4px}
+.lib-search-group-label{display:flex;align-items:center;gap:8px;padding:12px 0 8px;cursor:pointer;border-bottom:1px solid var(--border);margin-bottom:6px}
+.lib-search-group-code{font-size:11px;font-weight:800;color:var(--accent);letter-spacing:1px}
+.lib-search-group-name{font-size:12px;font-weight:500;color:var(--text-2);flex:1}
+
+/* LIBRARY — STATES */
+.lib-loading{display:flex;flex-direction:column;align-items:center;gap:14px;padding:60px 20px}
+.lib-spinner{width:28px;height:28px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.lib-loading-text{font-size:13px;color:var(--text-3)}
+.lib-error{display:flex;flex-direction:column;align-items:center;gap:12px;padding:60px 20px;text-align:center}
+.lib-error-icon{font-size:36px}
+.lib-error-msg{font-size:14px;color:var(--text-2);line-height:1.7}
+.lib-retry-btn{margin-top:8px;background:var(--accent);color:#0B2D72;border:none;border-radius:12px;padding:12px 28px;font-family:'Inter',sans-serif;font-weight:700;font-size:14px;cursor:pointer}
+.lib-empty{padding:40px 20px;text-align:center;color:var(--text-3);font-size:14px;line-height:1.7}
+.lib-empty strong{display:block;color:var(--text-2);margin-bottom:6px}
+
+/* LIBRARY — PDF VIEWER OVERLAY */
+.lib-pdf-overlay{
+  position:fixed;inset:0;background:var(--bg-primary);
+  z-index:1500;display:flex;flex-direction:column;
+  transform:translateY(100%);transition:transform .3s cubic-bezier(.32,.72,0,1);
+}
+.lib-pdf-overlay.open{transform:translateY(0)}
+.lib-pdf-header{
+  height:56px;display:flex;align-items:center;gap:10px;
+  padding:0 12px;background:var(--header-bg);
+  border-bottom:1px solid var(--border);flex-shrink:0;
+}
+.lib-pdf-close{width:38px;height:38px;border:none;border-radius:10px;background:var(--input-bg);color:var(--text-2);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.lib-pdf-close svg{width:18px;height:18px}
+.lib-pdf-title{flex:1;font-size:13px;font-weight:600;color:var(--text-1);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lib-pdf-download{width:38px;height:38px;border-radius:10px;background:var(--accent);color:#0B2D72;display:flex;align-items:center;justify-content:center;flex-shrink:0;text-decoration:none}
+.lib-pdf-download svg{width:18px;height:18px}
+.lib-pdf-body{flex:1;position:relative;overflow:hidden}
+.lib-pdf-frame{width:100%;height:100%;border:none;background:#fff}
+.lib-pdf-fallback{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:40px 20px;text-align:center;height:100%}
+.lib-pdf-fallback-icon{font-size:48px}
+.lib-pdf-fallback-msg{font-size:14px;color:var(--text-2);line-height:1.7}
+.lib-pdf-open-btn{display:inline-block;background:var(--accent);color:#0B2D72;text-decoration:none;border-radius:14px;padding:13px 32px;font-family:'Inter',sans-serif;font-weight:700;font-size:14px}
 
 /* ABOUT */
 .about-tagline{font-size:22px;font-weight:800;color:var(--text-1);line-height:1.3;margin-bottom:20px}
@@ -449,7 +537,7 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
   <!-- LIBRARY OVERLAY -->
   <div class="fs-overlay" id="library-overlay">
     <div class="ov-header">
-      <button class="ov-back" onclick="closeOverlay('library-overlay')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
+      <button class="ov-back" onclick="BUKLibrary.close()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
       <span class="ov-title">Library Resources</span>
     </div>
     <div class="ov-body" id="library-body"></div>
@@ -487,7 +575,7 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
   <div id="menu-backdrop" onclick="closeMenu()"></div>
   <div id="menu-drawer">
     <div class="menu-handle-wrap" onclick="closeMenu()"><div class="menu-handle"></div></div>
-    <div class="menu-item" onclick="openOverlay('library-overlay');closeMenu()">
+    <div class="menu-item" onclick="BUKLibrary.open();closeMenu()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
       Library Resources
     </div>
@@ -501,6 +589,7 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
   <div id="toast"></div>
 </div>
 
+<script src="./library.js"></script>
 <script>
 /* =====================================================
    BUILDING DATA (59 buildings, GeoJSON [lng,lat])
@@ -593,24 +682,7 @@ var CAMPUS_CENTER=[11.9809411,8.4754721];
 var CAMPUS_SW=[11.972,8.468];
 var CAMPUS_NE=[11.989,8.485];
 
-/* LIBRARY */
-var LIBRARY_DATA=[
-  {category:'Past Questions',items:[
-    {title:'BCH 201 \u2014 Biochemistry',meta:'2023/2024 session',url:null},
-    {title:'PHY 101 \u2014 General Physics',meta:'2023/2024 session',url:null},
-    {title:'BIO 101 \u2014 General Biology',meta:'2023/2024 session',url:null},
-    {title:'MTH 101 \u2014 Elementary Mathematics',meta:'2023/2024 session',url:null}
-  ]},
-  {category:'Textbooks & Reference',items:[
-    {title:'Biochemistry \u2014 Lehninger (8th Ed.)',meta:'PDF',url:null},
-    {title:'Campbell Biology (12th Ed.)',meta:'PDF',url:null},
-    {title:'University Physics \u2014 Young & Freedman',meta:'PDF',url:null}
-  ]},
-  {category:'Study Materials',items:[
-    {title:'Faculty of Life Sciences Study Pack',meta:'Compiled notes',url:null},
-    {title:'Pharmacy Course Outlines',meta:'2024/2025',url:null}
-  ]}
-];
+/* LIBRARY — loaded externally via BUKLibrary module (library.js) */
 
 /* =====================================================
    APP STATE
@@ -946,17 +1018,9 @@ function openOverlay(id){document.getElementById(id).classList.add('open');}
 function closeOverlay(id){document.getElementById(id).classList.remove('open');}
 
 /* =====================================================
-   LIBRARY
+   LIBRARY — delegated to BUKLibrary module (library.js)
    ===================================================== */
-function renderLibrary(){
-  document.getElementById('library-body').innerHTML=LIBRARY_DATA.map(function(cat){
-    return '<div class="lib-category"><div class="lib-cat-title">'+cat.category+'</div>'+
-      cat.items.map(function(it){
-        if(it.url)return'<a class="lib-item available" href="'+it.url+'" target="_blank" rel="noopener"><div class="lib-item-info"><div class="lib-item-title">'+it.title+'</div>'+(it.meta?'<div class="lib-item-meta">'+it.meta+'</div>':'')+' </div><div class="lib-open"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></div></a>';
-        return'<div class="lib-item"><div class="lib-item-info"><div class="lib-item-title">'+it.title+'</div>'+(it.meta?'<div class="lib-item-meta">'+it.meta+'</div>':'')+' </div><div class="lib-soon">Soon</div></div>';
-      }).join('')+'</div>';
-  }).join('');
-}
+/* renderLibrary() removed — BUKLibrary.init() handles this */
 
 /* =====================================================
    PRECACHE
@@ -1049,7 +1113,7 @@ function initApp(){
   initMap();
   initSearch();
   initSheetSwipe();/* registered once here, not on every sheet open */
-  renderLibrary();
+  BUKLibrary.init();/* prefetch catalogue in background */
   checkDeepLink();
   /* Service Worker */
   if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost')){

@@ -1,0 +1,246 @@
+{
+  "_meta": {
+    "version": "1.0.0",
+    "updated": "2025-01-01",
+    "maintainer": "BUK Navigate",
+    "notes": "All URLs must be public Cloudflare R2 links or stable direct links. Set url to null to show 'Coming Soon' badge. textbooks type accepts external links (e.g. openlibrary.org) — no upload needed."
+  },
+  "courses": [
+    {
+      "id": "bch",
+      "code": "BCH",
+      "name": "Biochemistry",
+      "faculty": "College of Natural & Pharmaceutical Sciences",
+      "resources": [
+        {
+          "id": "bch-pq-201-2324",
+          "type": "past_questions",
+          "title": "BCH 201 — Introductory Biochemistry I",
+          "session": "2023/2024",
+          "semester": 1,
+          "url": null,
+          "size_kb": null,
+          "tags": ["biochemistry", "bch201", "first year"]
+        },
+        {
+          "id": "bch-pq-202-2324",
+          "type": "past_questions",
+          "title": "BCH 202 — Introductory Biochemistry II",
+          "session": "2023/2024",
+          "semester": 2,
+          "url": null,
+          "size_kb": null,
+          "tags": ["biochemistry", "bch202", "first year"]
+        },
+        {
+          "id": "bch-notes-201-metabolism",
+          "type": "lecture_notes",
+          "title": "BCH 201 — Metabolism Lecture Notes",
+          "session": "2024/2025",
+          "semester": 1,
+          "url": null,
+          "size_kb": null,
+          "tags": ["biochemistry", "metabolism", "notes"]
+        },
+        {
+          "id": "bch-textbook-lehninger",
+          "type": "textbook",
+          "title": "Lehninger Principles of Biochemistry (8th Ed.)",
+          "session": null,
+          "semester": null,
+          "url": "https://openlibrary.org/books/OL7353595M/Lehninger_principles_of_biochemistry",
+          "size_kb": null,
+          "tags": ["biochemistry", "textbook", "reference"]
+        }
+      ]
+    },
+    {
+      "id": "phy",
+      "code": "PHY",
+      "name": "Physics",
+      "faculty": "Faculty of Physical Sciences",
+      "resources": [
+        {
+          "id": "phy-pq-101-2324",
+          "type": "past_questions",
+          "title": "PHY 101 — General Physics I",
+          "session": "2023/2024",
+          "semester": 1,
+          "url": null,
+          "size_kb": null,
+          "tags": ["physics", "phy101", "general physics"]
+        },
+        {
+          "id": "phy-pq-102-2324",
+          "type": "past_questions",
+          "title": "PHY 102 — General Physics II",
+          "session": "2023/2024",
+          "semester": 2,
+          "url": null,
+          "size_kb": null,
+          "tags": ["physics", "phy102", "general physics"]
+        },
+        {
+          "id": "phy-lab-manual-2425",
+          "type": "lab_manual",
+          "title": "PHY 191 — Physics Practical Manual",
+          "session": "2024/2025",
+          "semester": null,
+          "url": null,
+          "size_kb": null,
+          "tags": ["physics", "lab", "practical", "manual"]
+        },
+        {
+          "id": "phy-textbook-serway",
+          "type": "textbook",
+          "title": "Physics for Scientists & Engineers — Serway (9th Ed.)",
+          "session": null,
+          "semester": null,
+          "url": null,
+          "size_kb": null,
+          "tags": ["physics", "textbook", "reference"]
+        }
+      ]
+    },
+    {
+      "id": "bio",
+      "code": "BIO",
+      "name": "Biology / Biological Sciences",
+      "faculty": "Faculty of Life Sciences",
+      "resources": [
+        {
+          "id": "bio-pq-101-2324",
+          "type": "past_questions",
+          "title": "BIO 101 — General Biology I",
+          "session": "2023/2024",
+          "semester": 1,
+          "url": null,
+          "size_kb": null,
+          "tags": ["biology", "bio101", "general biology"]
+        },
+        {
+          "id": "bio-pq-102-2324",
+          "type": "past_questions",
+          "title": "BIO 102 — General Biology II",
+          "session": "2023/2024",
+          "semester": 2,
+          "url": null,
+          "size_kb": null,
+          "tags": ["biology", "bio102", "general biology"]
+        },
+        {
+          "id": "bio-textbook-campbell",
+          "type": "textbook",
+          "title": "Campbell Biology (12th Ed.) — Urry et al.",
+          "session": null,
+          "semester": null,
+          "url": null,
+          "size_kb": null,
+          "tags": ["biology", "textbook", "campbell", "reference"]
+        }
+      ]
+    },
+    {
+      "id": "mth",
+      "code": "MTH",
+      "name": "Mathematics",
+      "faculty": "Faculty of Physical Sciences",
+      "resources": [
+        {
+          "id": "mth-pq-101-2324",
+          "type": "past_questions",
+          "title": "MTH 101 — Elementary Mathematics I",
+          "session": "2023/2024",
+          "semester": 1,
+          "url": null,
+          "size_kb": null,
+          "tags": ["mathematics", "mth101", "calculus"]
+        },
+        {
+          "id": "mth-pq-102-2324",
+          "type": "past_questions",
+          "title": "MTH 102 — Elementary Mathematics II",
+          "session": "2023/2024",
+          "semester": 2,
+          "url": null,
+          "size_kb": null,
+          "tags": ["mathematics", "mth102", "calculus"]
+        }
+      ]
+    },
+    {
+      "id": "chm",
+      "code": "CHM",
+      "name": "Chemistry / Industrial Chemistry",
+      "faculty": "Faculty of Physical Sciences",
+      "resources": [
+        {
+          "id": "chm-pq-101-2324",
+          "type": "past_questions",
+          "title": "CHM 101 — General Chemistry I",
+          "session": "2023/2024",
+          "semester": 1,
+          "url": null,
+          "size_kb": null,
+          "tags": ["chemistry", "chm101"]
+        },
+        {
+          "id": "chm-lab-2425",
+          "type": "lab_manual",
+          "title": "CHM 191 — Chemistry Practical Manual",
+          "session": "2024/2025",
+          "semester": null,
+          "url": null,
+          "size_kb": null,
+          "tags": ["chemistry", "lab", "practical"]
+        }
+      ]
+    },
+    {
+      "id": "pcy",
+      "code": "PCY",
+      "name": "Pharmacy",
+      "faculty": "Faculty of Pharmaceutical Sciences",
+      "resources": [
+        {
+          "id": "pcy-course-outline-2425",
+          "type": "handout",
+          "title": "Pharmacy Programme — Course Outline 2024/2025",
+          "session": "2024/2025",
+          "semester": null,
+          "url": null,
+          "size_kb": null,
+          "tags": ["pharmacy", "course outline", "programme"]
+        }
+      ]
+    },
+    {
+      "id": "general",
+      "code": "GEN",
+      "name": "General / University-Wide",
+      "faculty": "University",
+      "resources": [
+        {
+          "id": "gen-student-handbook-2425",
+          "type": "handbook",
+          "title": "BUK Student Handbook 2024/2025",
+          "session": "2024/2025",
+          "semester": null,
+          "url": null,
+          "size_kb": null,
+          "tags": ["handbook", "student guide", "university rules", "regulations"]
+        },
+        {
+          "id": "gen-postgrad-handbook-2425",
+          "type": "handbook",
+          "title": "BUK Postgraduate Handbook 2024/2025",
+          "session": "2024/2025",
+          "semester": null,
+          "url": null,
+          "size_kb": null,
+          "tags": ["handbook", "postgraduate", "pgd", "masters", "phd"]
+        }
+      ]
+    }
+  ]
+}

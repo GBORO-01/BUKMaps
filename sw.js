@@ -7,7 +7,7 @@
    - OSRM route → Network only (routing needs live connection)
 ================================================================ */
 
-const APP_VERSION   = 'v2.0.0';
+const APP_VERSION   = 'v2.1.0';
 const SHELL_CACHE   = `buk-shell-${APP_VERSION}`;
 const TILE_CACHE    = `buk-tiles-${APP_VERSION}`;
 const DATA_CACHE    = `buk-data-${APP_VERSION}`;
@@ -15,6 +15,7 @@ const DATA_CACHE    = `buk-data-${APP_VERSION}`;
 const SHELL_ASSETS = [
   './',
   './index.html',
+  './library.js',
   './manifest.json',
   'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
   'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
@@ -64,6 +65,23 @@ self.addEventListener('fetch', event => {
   // OSRM routing — network only (no point caching ephemeral routes)
   if (url.hostname.includes('osrm') || url.hostname.includes('router.project-osrm')) {
     event.respondWith(fetch(request));
+    return;
+  }
+
+  // Cloudflare R2 PDFs — cache first (PDFs don't change once uploaded)
+  // R2 public bucket URLs contain r2.dev or a custom domain configured by the operator
+  if (
+    url.hostname.includes('r2.dev') ||
+    url.hostname.includes('pub-') // common R2 public bucket pattern
+  ) {
+    event.respondWith(cacheFirst(request, DATA_CACHE));
+    return;
+  }
+
+  // library.json — network first so updates propagate immediately,
+  // but fall back to cache so the library still works offline
+  if (url.pathname.endsWith('library.json')) {
+    event.respondWith(networkFirst(request, DATA_CACHE));
     return;
   }
 
