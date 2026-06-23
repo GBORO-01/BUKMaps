@@ -719,6 +719,51 @@ var buildingLayers={},buildingLabels={},fuse=null,lrmAvailable=false;
 function geo2leaf(coords){return coords.map(function(p){return[p[1],p[0]];});}
 function centroid(ll){var a=0,b=0,n=ll.length;for(var i=0;i<n;i++){a+=ll[i][0];b+=ll[i][1];}return[a/n,b/n];}
 
+/* =====================================================
+   CORNER SMOOTHING — proportional Chaikin-style cut
+   Rounds hard polygon vertices into soft curves WITHOUT a fixed
+   meter radius (building sizes range from ~4m to 100m+ edges,
+   so a fixed radius would distort small buildings into blobs).
+   Instead each corner is cut by a % of its OWN adjacent edge
+   length, capped well under 50% so opposite cuts on a short edge
+   can never meet/cross. Degenerate near-duplicate points (a real
+   bug found in 3 existing buildings, edges <0.5m) are skipped to
+   avoid divide-by-zero / NaN curve segments.
+   ===================================================== */
+var SMOOTH_FRACTION=0.22;  // 22% — visually rounds corners without flattening recognisable shape
+var SMOOTH_MIN_EDGE=1.5;   // meters; edges shorter than this are left sharp (degenerate data guard)
+var SMOOTH_ITERATIONS=2;   // 2 passes = smooth curve, not just a single chamfered cut
+
+function _edgeLenMeters(a,b){
+  // Equirectangular approx — accurate enough at building scale (<200m) and far cheaper than haversine per-call
+  var R=6371000,dLat=(b[0]-a[0])*Math.PI/180,dLon=(b[1]-a[1])*Math.PI/180;
+  var x=dLon*Math.cos((a[0]+b[0])*Math.PI/360)*R,y=dLat*R;
+  return Math.sqrt(x*x+y*y);
+}
+
+function smoothPolygon(latlngs){
+  var pts=latlngs;
+  for(var iter=0;iter<SMOOTH_ITERATIONS;iter++){
+    var out=[];
+    var n=pts.length;
+    for(var i=0;i<n;i++){
+      var p0=pts[i],p1=pts[(i+1)%n];
+      var edgeLen=_edgeLenMeters(p0,p1);
+      if(edgeLen<SMOOTH_MIN_EDGE){
+        /* Degenerate/duplicate-point edge — keep original point,
+           don't attempt to cut a near-zero-length segment. */
+        out.push(p0);
+        continue;
+      }
+      var t=SMOOTH_FRACTION;
+      out.push([p0[0]+(p1[0]-p0[0])*t, p0[1]+(p1[1]-p0[1])*t]);
+      out.push([p0[0]+(p1[0]-p0[0])*(1-t), p0[1]+(p1[1]-p0[1])*(1-t)]);
+    }
+    pts=out;
+  }
+  return pts;
+}
+
 var _toastTimer;
 function showToast(msg,mintStyle){
   var t=document.getElementById('toast');
@@ -776,9 +821,9 @@ function initMap(){
   });
   L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,attribution:'Tiles &copy; Esri'}).addTo(map);
   L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png',{maxZoom:19,subdomains:'abcd',pane:'tooltipPane'}).addTo(map);
-  /* Campus perimeter */
-  var perim=[[11.9867,8.4811],[11.9858,8.4776],[11.9843,8.4720],[11.9828,8.4718],[11.9774,8.4720],[11.9746,8.4754],[11.9750,8.4820],[11.9780,8.4835],[11.9820,8.4833],[11.9855,8.4830],[11.9867,8.4811]];
-  L.polygon(perim,{color:'#0AC4E0',weight:2,dashArray:'7 5',fillOpacity:0.03,fillColor:'#0AC4E0',interactive:false}).addTo(map);
+  /* Campus boundary line intentionally removed from view per request.
+     Pan restriction is unaffected — it's enforced separately above via
+     maxBounds:bounds (CAMPUS_SW/CAMPUS_NE), not this polygon. */
   renderBuildings();
   updateMapTileFilter(document.documentElement.getAttribute('data-theme')||'light');
 }
@@ -796,8 +841,9 @@ function labelPriority(b){
 function renderBuildings(){
   BUILDINGS.forEach(function(b){
     var ll=geo2leaf(b.coords);
+    var smoothLl=ll.length>=4?smoothPolygon(ll):ll; /* triangles/lines left untouched */
     var col=TYPE_COLORS[b.type]||'#0AC4E0';
-    var poly=L.polygon(ll,{
+    var poly=L.polygon(smoothLl,{
       color:col,weight:0,fillColor:col,
       fillOpacity:b.inactive?0.10:0.22,
       bubblingMouseEvents:false
@@ -808,7 +854,9 @@ function renderBuildings(){
 
     /* Zoom-gated, collision-avoided label. Created once, toggled
        on/off the map by updateBuildingLabels() rather than
-       recreated, to keep pan/zoom cheap. */
+       recreated, to keep pan/zoom cheap. Centroid computed from the
+       ORIGINAL (unsmoothed) geometry so the label/tap-target sits at
+       the building's true center, not shifted by the cosmetic curve. */
     var c=centroid(ll);
     var label=L.marker(c,{
       icon:L.divIcon({className:'building-label-icon',html:'<span class="building-label">'+_escLabel(b.name)+'</span>',iconSize:null}),
