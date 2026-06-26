@@ -1,13 +1,20 @@
 /* ================================================================
    BUK NAVIGATE — SERVICE WORKER
    Strategy:
-   - App shell  → Cache First (instant load always)
-   - Map tiles  → Cache First, network fallback (offline map)
-   - Library    → Network First, cache fallback (fresh content)
-   - OSRM route → Network only (routing needs live connection)
+   - index.html  → Network First (always fresh when online, cache fallback offline)
+   - App shell   → Cache First (CDN assets, fonts — instant load)
+   - Map tiles   → Cache First, network fallback (offline map)
+   - library.json→ Network First, cache fallback (fresh content)
+   - OSRM route  → Network only (routing needs live connection)
+   - R2 PDFs     → Cache First (immutable once uploaded)
+
+   UPDATE FLOW:
+   - New SW installs, posts SKIP_WAITING, activates immediately
+   - Main app listens for controllerchange → reloads page once
+   - index.html served network-first ensures fresh content on reload
 ================================================================ */
 
-const APP_VERSION   = 'v2.1.0';
+const APP_VERSION   = 'v2.2.0';
 const SHELL_CACHE   = `buk-shell-${APP_VERSION}`;
 const TILE_CACHE    = `buk-tiles-${APP_VERSION}`;
 const DATA_CACHE    = `buk-data-${APP_VERSION}`;
@@ -25,13 +32,27 @@ const SHELL_ASSETS = [
 ];
 
 /* ----------------------------------------------------------------
-   INSTALL — cache shell assets
+   MESSAGE — allow main app to trigger immediate SW activation
+   Main app posts {type:'SKIP_WAITING'} when it detects a new SW
+   is waiting. SW calls skipWaiting() → activates → main app
+   reloads the page to pick up fresh index.html.
+---------------------------------------------------------------- */
+self.addEventListener('message', event => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+});
+
+/* ----------------------------------------------------------------
+   INSTALL — cache shell assets (does NOT call skipWaiting here;
+   that is now driven by main app via message, which gives it
+   control over WHEN the reload happens rather than immediately
+   disrupting an in-progress user session)
 ---------------------------------------------------------------- */
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(SHELL_CACHE)
       .then(cache => cache.addAll(SHELL_ASSETS))
-      .then(() => self.skipWaiting())
       .catch(err => console.warn('[SW] Shell cache failed:', err))
   );
 });
@@ -61,6 +82,14 @@ self.addEventListener('fetch', event => {
   // Skip non-GET and chrome-extension requests
   if (request.method !== 'GET') return;
   if (url.protocol === 'chrome-extension:') return;
+
+  // index.html (navigation requests) — NETWORK FIRST so deployments
+  // reach users without manual cache clearing. Falls back to cached
+  // version when offline so the app still launches.
+  if (request.mode === 'navigate' || url.pathname.endsWith('index.html') || url.pathname === '/BUK-Navigate/' || url.pathname === '/BUK-Navigate') {
+    event.respondWith(networkFirst(request, SHELL_CACHE));
+    return;
+  }
 
   // OSRM routing — network only (no point caching ephemeral routes)
   if (url.hostname.includes('osrm') || url.hostname.includes('router.project-osrm')) {
