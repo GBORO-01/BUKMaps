@@ -149,6 +149,27 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
   display:flex;align-items:center;justify-content:center;
   z-index:900;transition:all .2s;box-shadow:var(--shadow);
 }
+/* ZOOM CONTROLS — desktop only (touch devices use pinch-to-zoom) */
+#zoom-controls{
+  display:none; /* hidden on mobile */
+  position:fixed;left:16px;bottom:22px;
+  flex-direction:column;gap:6px;z-index:900;
+}
+@media(hover:hover)and(pointer:fine){
+  /* Only show on devices with a true pointer (mouse/trackpad) */
+  #zoom-controls{display:flex;}
+}
+.zoom-btn{
+  width:42px;height:42px;border-radius:12px;border:none;cursor:pointer;
+  background:var(--bg-secondary);color:var(--text-1);
+  box-shadow:var(--shadow-sm);
+  display:flex;align-items:center;justify-content:center;
+  font-size:22px;font-weight:300;line-height:1;
+  transition:background .12s,transform .1s;
+  font-family:'Inter',sans-serif;
+}
+.zoom-btn:hover{background:var(--accent);color:var(--on-accent);}
+.zoom-btn:active{transform:scale(.92);}
 #gps-fab{bottom:22px;background:var(--bg-secondary);color:var(--text-2)}
 #gps-fab.active{background:var(--accent);color:#0B2D72}
 #gps-fab svg,#precache-fab svg{width:22px;height:22px}
@@ -168,7 +189,12 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
 #search-overlay{
   position:fixed;top:56px;left:0;right:0;
   background:var(--overlay);backdrop-filter:blur(20px);
-  max-height:calc(100vh - 56px);overflow-y:auto;
+  /* dvh = dynamic viewport height: shrinks when mobile keyboard opens.
+     vh fallback for browsers that don't support dvh (older Android). */
+  max-height:calc(100vh - 56px);
+  max-height:calc(100dvh - 56px);
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
   transform:translateY(-105%);transition:transform .25s cubic-bezier(.4,0,.2,1);
   z-index:1080;
 }
@@ -221,6 +247,123 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
 }
 .sheet-handle{width:40px;height:4px;background:var(--border);border-radius:2px}
 #sheet-content{padding:0 18px 100px}
+/* =====================================================
+   BUILDING PHOTO — hero + gallery
+   Full-bleed top of sheet. Floated close/badge overlay.
+   ===================================================== */
+.sheet-photo-hero{
+  position:relative;
+  width:100%;
+  /* Reserves 16:9 space before image loads — prevents layout jump */
+  aspect-ratio:16/9;
+  overflow:hidden;
+  background:var(--input-bg);
+  /* Shimmer skeleton */
+  background:linear-gradient(90deg,var(--input-bg) 25%,rgba(10,196,224,0.07) 50%,var(--input-bg) 75%);
+  background-size:200% 100%;
+  animation:photo-shimmer 1.4s infinite;
+  border-radius:0; /* sheet already has 20px top radius */
+  flex-shrink:0;
+}
+@keyframes photo-shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.sheet-photo-hero.loaded{animation:none;background:var(--bg-primary)}
+.sheet-photo-img{
+  position:absolute;inset:0;
+  width:100%;height:100%;
+  object-fit:cover;
+  opacity:0;transition:opacity .3s ease;
+}
+.sheet-photo-img.visible{opacity:1}
+
+/* Gradient scrim — ensures badge/close button are always readable
+   regardless of photo brightness at the top edge */
+.sheet-photo-hero::after{
+  content:'';position:absolute;
+  top:0;left:0;right:0;height:72px;
+  background:linear-gradient(to bottom,rgba(11,45,114,0.55) 0%,transparent 100%);
+  pointer-events:none;
+}
+/* Overlay controls float OVER the photo */
+.sheet-photo-overlay{
+  position:absolute;top:0;left:0;right:0;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 14px 0;z-index:2;
+}
+.sheet-photo-badge{
+  font-size:10px;font-weight:800;letter-spacing:1px;text-transform:uppercase;
+  padding:4px 10px;border-radius:8px;backdrop-filter:blur(8px);
+  background:rgba(255,255,255,0.15);color:#fff;
+  border:1px solid rgba(255,255,255,0.25);
+}
+.sheet-photo-close{
+  width:34px;height:34px;border-radius:50%;border:none;cursor:pointer;
+  background:rgba(11,45,114,0.5);backdrop-filter:blur(8px);
+  display:flex;align-items:center;justify-content:center;color:#fff;
+}
+.sheet-photo-close svg{width:16px;height:16px}
+
+/* Sheet content padding when photo present — remove top padding,
+   photo IS the top of the sheet */
+.sheet-content-below-photo{padding:14px 18px 100px}
+
+/* Gallery strip */
+.sheet-gallery-wrap{margin:0 18px 4px}
+.sheet-gallery-label{
+  font-size:11px;font-weight:700;color:var(--text-3);
+  letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;
+}
+.sheet-gallery-strip{
+  display:flex;gap:8px;
+  overflow-x:auto;
+  scroll-snap-type:x mandatory;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:none;
+  padding-bottom:4px;
+}
+.sheet-gallery-strip::-webkit-scrollbar{display:none}
+.sheet-gallery-thumb{
+  flex-shrink:0;
+  width:80px;height:60px;
+  border-radius:10px;
+  object-fit:cover;
+  scroll-snap-align:start;
+  cursor:pointer;
+  border:2px solid transparent;
+  transition:border-color .15s,opacity .15s;
+  opacity:.75;
+}
+.sheet-gallery-thumb:active,.sheet-gallery-thumb.active{
+  border-color:var(--accent);opacity:1;
+}
+
+/* Fullscreen lightbox — opened when user taps gallery thumb or hero */
+#sheet-lightbox{
+  position:fixed;inset:0;
+  background:rgba(0,0,0,0.95);
+  z-index:2000;
+  display:flex;flex-direction:column;
+  transform:scale(.96);opacity:0;
+  transition:transform .22s ease,opacity .22s ease;
+  pointer-events:none;
+}
+#sheet-lightbox.open{transform:scale(1);opacity:1;pointer-events:all}
+.lightbox-header{
+  display:flex;align-items:center;justify-content:flex-end;
+  padding:14px 16px;flex-shrink:0;
+}
+.lightbox-close{
+  width:40px;height:40px;border:none;border-radius:50%;
+  background:rgba(255,255,255,0.12);color:#fff;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+}
+.lightbox-close svg{width:20px;height:20px}
+.lightbox-img-wrap{flex:1;display:flex;align-items:center;justify-content:center;padding:0 16px}
+.lightbox-img{max-width:100%;max-height:100%;object-fit:contain;border-radius:4px}
+.lightbox-caption{
+  padding:16px;text-align:center;
+  font-size:13px;color:rgba(255,255,255,0.55);flex-shrink:0;
+}
+
 .sheet-toprow{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:10px}
 .type-badge{
   display:inline-flex;align-items:center;padding:4px 12px;border-radius:20px;
@@ -514,6 +657,12 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
   <!-- RETURN BUTTON -->
   <button id="return-btn" onclick="returnToOldSite()">&#8592; Back to Old Site</button>
 
+  <!-- ZOOM CONTROLS (desktop only — hidden on touch devices via CSS) -->
+  <div id="zoom-controls">
+    <button class="zoom-btn" onclick="map&&map.zoomIn()" title="Zoom in">+</button>
+    <button class="zoom-btn" onclick="map&&map.zoomOut()" title="Zoom out">−</button>
+  </div>
+
   <!-- GPS FAB -->
   <button id="gps-fab" onclick="toggleGPS()">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="8" stroke-dasharray="3 2"/></svg>
@@ -539,6 +688,19 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
   <div id="building-sheet">
     <div class="sheet-handle-wrap" id="sheet-handle"><div class="sheet-handle"></div></div>
     <div id="sheet-content"></div>
+  </div>
+
+  <!-- PHOTO LIGHTBOX — shared across all buildings, opened programmatically -->
+  <div id="sheet-lightbox">
+    <div class="lightbox-header">
+      <button class="lightbox-close" onclick="closeLightbox()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="lightbox-img-wrap">
+      <img class="lightbox-img" id="lightbox-img" src="" alt="">
+    </div>
+    <div class="lightbox-caption" id="lightbox-caption"></div>
   </div>
 
   <!-- AKTH MODAL -->
@@ -585,7 +747,7 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
         <div class="about-point"><div class="about-point-dot"></div><div class="about-text">Built for us &#8212; every detail shaped around how BUK students actually navigate campus.</div></div>
       </div>
       <div class="about-footer">
-        Made with <span class="about-heart">&#x1F49A;</span> and code &#8212; with love from Seun.<br>
+        Made with code from <strong>Presido</strong>.<br>
         <span class="about-ver">V1.00 &#8212; more features dropping soon</span>
       </div>
     </div>
@@ -613,6 +775,13 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
 <script>
 /* =====================================================
    BUILDING DATA (59 buildings, GeoJSON [lng,lat])
+
+   Photo fields (optional — omit both until photos are ready):
+     photo:   'https://pub-YOURKEY.r2.dev/buildings/bldg-id-primary.jpg'
+     gallery: ['https://pub-YOURKEY.r2.dev/buildings/bldg-id-2.jpg',
+               'https://pub-YOURKEY.r2.dev/buildings/bldg-id-3.jpg']
+   Max recommended size: 400 KB per image (compress via squoosh.app before upload).
+   R2 bucket CORS must allow https://gboro-01.github.io before photos will load.
    ===================================================== */
 var BUILDINGS=[
 {id:'amina-namadi-sambo-hall',name:'Amina Namadi Sambo Hall',alias:'Female Hostel',type:'hostel',desc:'Female student residential hostel.',courses:[],coords:[[8.475921766179027,11.980506549964673],[8.47588522088759,11.980249533166031],[8.475633640098067,11.980283764161982],[8.475670185390555,11.980540780928024]]},
@@ -661,6 +830,7 @@ var BUILDINGS=[
 {id:'faculty-of-pharmaceutical-sciences',name:'Faculty of Pharmaceutical Sciences',alias:'Pharmacy Faculty',type:'lecture',desc:'Faculty building for Pharmaceutical Sciences.',courses:['Pharmacy'],coords:[[8.4798679,11.9824753],[8.4794329,11.9825211],[8.4794018,11.9823127],[8.4793204,11.9823212],[8.4793133,11.9822485],[8.4793935,11.9822374],[8.4793719,11.9820244],[8.4798057,11.9819849],[8.4798128,11.9820905],[8.4796375,11.9821098],[8.4796801,11.9823985],[8.4798474,11.982372]]},
 {id:'dept-of-pure-industrial-chemistry',name:'Dept. of Pure & Industrial Chemistry',alias:'Chemistry Dept',type:'lab',desc:'Main facility for the Pure and Industrial Chemistry department.',courses:['Chemistry','Industrial Chemistry'],coords:[[8.4797851,11.9815751],[8.4793128,11.9816332],[8.479283,11.9814186],[8.4791997,11.9814304],[8.4791779,11.9813365],[8.4792852,11.9813217],[8.479256,11.9810946],[8.4797306,11.9810533],[8.4797418,11.9811804],[8.4795399,11.9812096],[8.4795852,11.981479],[8.4797688,11.9814351]]},
 {id:'main-library',name:'Main Library',alias:'Central Library',type:'library',desc:'The main university library with print collections, reading rooms, and digital access.',courses:[],coords:[[8.480461,11.9820423],[8.4800773,11.9820986],[8.4799956,11.9815181],[8.4803833,11.9814708]]},
+{id:'mini-library',name:'Mini Library',alias:'BUK Mini Library',type:'library',desc:'A smaller branch library providing additional study and reading resources for students.',courses:[],coords:[[8.4784898,11.9793555],[8.4783538,11.9793715],[8.4783238,11.9791056],[8.4784606,11.9790917]]},
 {id:'bayero-cooperative-society',name:'Bayero Cooperative Society Limited',alias:'BUK Cooperative',type:'services',desc:'University cooperative society offering financial and retail services.',courses:[],coords:[[8.477986431088425,11.98210703825417],[8.47797131740137,11.981978805901178],[8.478190413503938,11.981954095819859],[8.4782055271898,11.982082328184603]]},
 {id:'asuu-buk-secretariat',name:'ASUU BUK Secretariat',alias:'',type:'admin',desc:'Secretariat of the Academic Staff Union of Universities, BUK chapter.',courses:[],coords:[[8.4803656,11.9819662],[8.4808777,11.9818898],[8.4809134,11.9824644],[8.4804246,11.982515]]},
 {id:'mahmoud-tukur-new-theatres',name:'Mahmoud Tukur New Theatres',alias:'MTNT',type:'theatre',desc:'Large twin lecture theatres on the Old Site.',courses:[],coords:[[8.4804174,11.9810209],[8.4804488,11.9813329],[8.4811281,11.9812491],[8.4810904,11.9809298]]},
@@ -718,51 +888,6 @@ var buildingLayers={},buildingLabels={},fuse=null,lrmAvailable=false;
    ===================================================== */
 function geo2leaf(coords){return coords.map(function(p){return[p[1],p[0]];});}
 function centroid(ll){var a=0,b=0,n=ll.length;for(var i=0;i<n;i++){a+=ll[i][0];b+=ll[i][1];}return[a/n,b/n];}
-
-/* =====================================================
-   CORNER SMOOTHING — proportional Chaikin-style cut
-   Rounds hard polygon vertices into soft curves WITHOUT a fixed
-   meter radius (building sizes range from ~4m to 100m+ edges,
-   so a fixed radius would distort small buildings into blobs).
-   Instead each corner is cut by a % of its OWN adjacent edge
-   length, capped well under 50% so opposite cuts on a short edge
-   can never meet/cross. Degenerate near-duplicate points (a real
-   bug found in 3 existing buildings, edges <0.5m) are skipped to
-   avoid divide-by-zero / NaN curve segments.
-   ===================================================== */
-var SMOOTH_FRACTION=0.22;  // 22% — visually rounds corners without flattening recognisable shape
-var SMOOTH_MIN_EDGE=1.5;   // meters; edges shorter than this are left sharp (degenerate data guard)
-var SMOOTH_ITERATIONS=2;   // 2 passes = smooth curve, not just a single chamfered cut
-
-function _edgeLenMeters(a,b){
-  // Equirectangular approx — accurate enough at building scale (<200m) and far cheaper than haversine per-call
-  var R=6371000,dLat=(b[0]-a[0])*Math.PI/180,dLon=(b[1]-a[1])*Math.PI/180;
-  var x=dLon*Math.cos((a[0]+b[0])*Math.PI/360)*R,y=dLat*R;
-  return Math.sqrt(x*x+y*y);
-}
-
-function smoothPolygon(latlngs){
-  var pts=latlngs;
-  for(var iter=0;iter<SMOOTH_ITERATIONS;iter++){
-    var out=[];
-    var n=pts.length;
-    for(var i=0;i<n;i++){
-      var p0=pts[i],p1=pts[(i+1)%n];
-      var edgeLen=_edgeLenMeters(p0,p1);
-      if(edgeLen<SMOOTH_MIN_EDGE){
-        /* Degenerate/duplicate-point edge — keep original point,
-           don't attempt to cut a near-zero-length segment. */
-        out.push(p0);
-        continue;
-      }
-      var t=SMOOTH_FRACTION;
-      out.push([p0[0]+(p1[0]-p0[0])*t, p0[1]+(p1[1]-p0[1])*t]);
-      out.push([p0[0]+(p1[0]-p0[0])*(1-t), p0[1]+(p1[1]-p0[1])*(1-t)]);
-    }
-    pts=out;
-  }
-  return pts;
-}
 
 var _toastTimer;
 function showToast(msg,mintStyle){
@@ -833,7 +958,12 @@ function initMap(){
    ===================================================== */
 /* Label priority — larger/more important building types win
    collision conflicts over small service structures. Higher = wins. */
-var LABEL_PRIORITY={lecture:3,admin:3,hostel:2,sport:2,mosque:1,service:1};
+/* NOTE: amina-namadi-sambo-hall and faculty-of-basic-medical-sciences
+   have centroids only ~2.6m apart — a known coordinate data bug.
+   Both are set priority 3 so neither permanently suppresses the other;
+   the shorter name wins the tiebreak at any given zoom level. Fix
+   the underlying coordinates on geojson.io to fully resolve. */
+var LABEL_PRIORITY={lecture:3,admin:3,hostel:3,sport:2,mosque:1,service:1};
 function labelPriority(b){
   return (LABEL_PRIORITY[b.type]!==undefined?LABEL_PRIORITY[b.type]:1);
 }
@@ -841,9 +971,8 @@ function labelPriority(b){
 function renderBuildings(){
   BUILDINGS.forEach(function(b){
     var ll=geo2leaf(b.coords);
-    var smoothLl=ll.length>=4?smoothPolygon(ll):ll; /* triangles/lines left untouched */
     var col=TYPE_COLORS[b.type]||'#0AC4E0';
-    var poly=L.polygon(smoothLl,{
+    var poly=L.polygon(ll,{
       color:col,weight:0,fillColor:col,
       fillOpacity:b.inactive?0.10:0.22,
       bubblingMouseEvents:false
@@ -878,9 +1007,7 @@ function _scheduleLabelUpdate(){
   clearTimeout(_labelUpdateTimer);
   _labelUpdateTimer=setTimeout(updateBuildingLabels,120);
 }
-function _escLabel(s){
-  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-}
+function _escLabel(s){ return _esc(s); }
 
 /* Show labels only at zoom >= LABEL_MIN_ZOOM, then resolve overlaps
    in screen space: higher-priority (faculty/lecture/hostel) labels
@@ -931,9 +1058,29 @@ function updateBuildingLabels(){
     }
   });
 }
+function _applyBuildingHighlight(id){
+  /* Reset any previously highlighted building first */
+  _resetBuildingHighlight();
+  var layer=buildingLayers[id];
+  if(!layer)return;
+  _highlightedLayerId=id;
+  layer.setStyle({fillColor:HIGHLIGHT_COLOR,fillOpacity:0.75});
+}
+function _resetBuildingHighlight(){
+  if(!_highlightedLayerId)return;
+  var prev=BUILDINGS.find(function(x){return x.id===_highlightedLayerId;});
+  var layer=buildingLayers[_highlightedLayerId];
+  if(prev&&layer){
+    var col=TYPE_COLORS[prev.type]||'#0AC4E0';
+    layer.setStyle({fillColor:col,fillOpacity:prev.inactive?0.10:0.22});
+  }
+  _highlightedLayerId=null;
+}
+
 function handleBuildingClick(b){
   var c=centroid(geo2leaf(b.coords));
   map.panTo(c,{animate:true,duration:0.4});
+  _applyBuildingHighlight(b.id);
   openBuildingSheet(b);
 }
 
@@ -1012,6 +1159,11 @@ function handleSearch(q){
     return '<div class="search-item" onclick="selectBuilding(\''+it.id+'\')"><div class="type-dot" style="background:'+col+'"></div><div><div class="search-name">'+it.name+'</div><div class="search-sub">'+sub+'</div></div></div>';
   }).join('');
 }
+/* Track the currently highlighted building layer so we can reset it
+   when the sheet closes — even if the user taps a different building. */
+var _highlightedLayerId=null;
+var HIGHLIGHT_COLOR='#1FB88E'; /* mint — distinct from all TYPE_COLORS */
+
 function selectBuilding(id){
   var b=BUILDINGS.find(function(x){return x.id===id;});
   if(!b)return;
@@ -1019,8 +1171,7 @@ function selectBuilding(id){
   var ll=geo2leaf(b.coords);
   var c=centroid(ll);
   map.flyTo(c,18,{duration:1.2});
-  var layer=buildingLayers[id];
-  if(layer){layer.setStyle({fillOpacity:0.55});setTimeout(function(){layer.setStyle({fillOpacity:b.inactive?0.10:0.22});},700);}
+  _applyBuildingHighlight(id);
   setTimeout(function(){openBuildingSheet(b);},900);
 }
 
@@ -1032,25 +1183,114 @@ function openBuildingSheet(b){
   var col=TYPE_COLORS[b.type]||'#0AC4E0';
   var hex28=col+'28';
   var label=TYPE_LABELS[b.type]||b.type;
-  var html='<div class="sheet-toprow">'+
-    '<div class="type-badge" style="background:'+hex28+';color:'+col+'">'+label+'</div>'+
-    '<button class="sheet-close" onclick="closeBuildingSheet()">'+
-    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>'+
-    '<h2 class="sheet-name">'+b.name+'</h2>';
-  if(b.alias)html+='<div class="sheet-alias">Also known as: '+b.alias+'</div>';
+  var html='';
+
+  /* ---- PHOTO HERO (only when b.photo is set) ---- */
+  if(b.photo){
+    /* Full-bleed hero with overlay badge+close, shimmer skeleton.
+       Risk 1 (layout jump): aspect-ratio:16/9 reserves space before load.
+       Risk 2 (close invisible): badge+close float over photo via .sheet-photo-overlay.
+       Risk 3 (skeleton on light bg): uses var(--input-bg) visible on both themes. */
+    html+='<div class="sheet-photo-hero" id="sph-wrap">'+
+      '<img class="sheet-photo-img" id="sph-img" src="'+_escAttr(b.photo)+'" alt="'+_escAttr(b.name)+'" '+
+        'onload="sheetPhotoLoaded()" onerror="sheetPhotoError()">'+
+      '<div class="sheet-photo-overlay">'+
+        '<div class="sheet-photo-badge" style="background:'+col+'28;border-color:'+col+'66;color:#fff">'+_esc(label)+'</div>'+
+        '<button class="sheet-photo-close" onclick="closeBuildingSheet()">'+
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>'+
+        '</button>'+
+      '</div>'+
+    '</div>';
+    /* Gallery strip — lazy: thumbs rendered immediately but full images only
+       fetched when the lightbox is opened. Risk 5 (memory): no preloading. */
+    if(b.gallery&&b.gallery.length){
+      html+='<div class="sheet-gallery-wrap">'+
+        '<div class="sheet-gallery-label">More photos</div>'+
+        '<div class="sheet-gallery-strip" id="gallery-strip">'+
+          b.gallery.map(function(url,i){
+            return '<img class="sheet-gallery-thumb" src="'+_escAttr(url)+'" '+
+              'loading="lazy" alt="Photo '+(i+2)+'" '+
+              'onclick="openLightbox(\''+_escAttr(url)+'\',\''+_escAttr(b.name)+'\')">';
+          }).join('')+
+        '</div>'+
+      '</div>';
+    }
+    /* Content below photo has tighter top padding since photo provides visual separation */
+    html+='<div class="sheet-content-below-photo">';
+    html+='<h2 class="sheet-name">'+_esc(b.name)+'</h2>';
+  }else{
+    /* No photo — render exactly as before, standard content padding.
+       Risk 4 (graceful degradation): zero empty slot, no broken layout. */
+    html+='<div class="sheet-toprow">'+
+      '<div class="type-badge" style="background:'+hex28+';color:'+col+'">'+_esc(label)+'</div>'+
+      '<button class="sheet-close" onclick="closeBuildingSheet()">'+
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>'+
+      '<h2 class="sheet-name">'+_esc(b.name)+'</h2>';
+  }
+
+  if(b.alias)html+='<div class="sheet-alias">Also known as: '+_esc(b.alias)+'</div>';
   if(b.inactive)html+='<div class="sheet-inactive"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> Not currently in active use</div>';
-  if(b.desc)html+='<p class="sheet-desc">'+b.desc+'</p>';
+  if(b.desc)html+='<p class="sheet-desc">'+_esc(b.desc)+'</p>';
   if(b.courses&&b.courses.length){
     html+='<div class="courses-wrap"><div class="sheet-label">Courses here</div><div class="courses-list">'+
-      b.courses.map(function(c){return'<span class="course-pill">'+c+'</span>';}).join('')+'</div></div>';
+      b.courses.map(function(c){return'<span class="course-pill">'+_esc(c)+'</span>';}).join('')+'</div></div>';
   }
   html+='<div class="sheet-actions">'+
     '<button class="btn-primary" onclick="startRoute()">'+
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>Directions</button>'+
     '<button class="btn-secondary" onclick="shareBuilding()">'+
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>Share</button></div>';
+
+  if(b.photo)html+='</div>'; /* close .sheet-content-below-photo */
+
   document.getElementById('sheet-content').innerHTML=html;
   document.getElementById('building-sheet').classList.add('open');
+
+  /* Risk 4 — gallery touch conflict: block vertical sheet-dismiss swipe
+     while user is horizontally scrolling gallery. Applied after render. */
+  if(b.gallery&&b.gallery.length){
+    var strip=document.getElementById('gallery-strip');
+    if(strip){
+      strip.addEventListener('touchmove',function(e){
+        e.stopPropagation();
+      },{passive:true});
+    }
+  }
+}
+
+/* Shared HTML escape utilities used by sheet and lightbox */
+function _esc(s){if(!s)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function _escAttr(s){if(!s)return'';return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+
+function sheetPhotoLoaded(){
+  var img=document.getElementById('sph-img');
+  var wrap=document.getElementById('sph-wrap');
+  if(img)img.classList.add('visible');
+  if(wrap)wrap.classList.add('loaded');
+}
+function sheetPhotoError(){
+  /* Photo failed to load (bad URL, network, CORS). Remove the hero entirely
+     rather than showing a broken image icon — sheet falls back to no-photo layout. */
+  var wrap=document.getElementById('sph-wrap');
+  if(wrap)wrap.style.display='none';
+}
+
+/* Lightbox */
+function openLightbox(url,caption){
+  var lb=document.getElementById('sheet-lightbox');
+  var img=document.getElementById('lightbox-img');
+  var cap=document.getElementById('lightbox-caption');
+  if(!lb||!img)return;
+  img.src=url;
+  if(cap)cap.textContent=caption||'';
+  lb.classList.add('open');
+}
+function closeLightbox(){
+  var lb=document.getElementById('sheet-lightbox');
+  if(lb)lb.classList.remove('open');
+  /* Clear src to stop any in-progress download */
+  var img=document.getElementById('lightbox-img');
+  if(img)img.src='';
 }
 function closeBuildingSheet(){
   var sh=document.getElementById('building-sheet');
@@ -1058,6 +1298,7 @@ function closeBuildingSheet(){
   sh.style.transform='';
   if(routeControl&&map){map.removeControl(routeControl);routeControl=null;}
   activeBuilding=null;
+  _resetBuildingHighlight();
 }
 
 /* Sheet swipe-to-dismiss — initialised ONCE */
@@ -1268,7 +1509,32 @@ function initApp(){
   checkDeepLink();
   /* Service Worker */
   if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost')){
-    navigator.serviceWorker.register('./sw.js').catch(function(e){console.warn('SW:',e);});
+    navigator.serviceWorker.register('./sw.js').then(function(reg){
+      /* When a new SW is found (deploy happened), tell it to activate
+         immediately by sending SKIP_WAITING. Then, when the controller
+         changes (new SW takes over), reload the page exactly once so
+         users get fresh index.html without manually clearing data.
+         A flag prevents reload loops. */
+      reg.addEventListener('updatefound',function(){
+        var newSW=reg.installing;
+        if(!newSW)return;
+        newSW.addEventListener('statechange',function(){
+          if(newSW.state==='installed'&&navigator.serviceWorker.controller){
+            /* New SW installed alongside existing controller — safe to activate */
+            newSW.postMessage({type:'SKIP_WAITING'});
+          }
+        });
+      });
+    }).catch(function(e){console.warn('SW:',e);});
+
+    /* Reload once when the SW controller changes (new SW took over).
+       'refreshing' flag stops any possible double-reload race. */
+    var refreshing=false;
+    navigator.serviceWorker.addEventListener('controllerchange',function(){
+      if(refreshing)return;
+      refreshing=true;
+      window.location.reload();
+    });
   }
   setLoaderBar(100);
   setTimeout(hideLoader,350);
