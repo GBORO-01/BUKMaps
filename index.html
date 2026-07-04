@@ -784,7 +784,7 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:
    R2 bucket CORS must allow https://gboro-01.github.io before photos will load.
    ===================================================== */
 var BUILDINGS=[
-{id:'amina-namadi-sambo-hall',name:'Amina Namadi Sambo Hall',alias:'Female Hostel',type:'hostel',desc:'Female student residential hostel.',courses:[],coords:[[8.475921766179027,11.980506549964673],[8.47588522088759,11.980249533166031],[8.475633640098067,11.980283764161982],[8.475670185390555,11.980540780928024]]},
+{id:'amina-namadi-sambo-hall',name:'Amina Namadi Sambo Hall',alias:'Female Hostel',type:'hostel',desc:'Female student residential hostel.',courses:[],coords:[[8.475463,11.9830897],[8.4748534,11.9831145],[8.4746504,11.9830209],[8.4746254,11.9824517],[8.4749285,11.9824431],[8.4749299,11.982573],[8.475455,11.9825517]]},
 {id:'faculty-of-basic-medical-sciences',name:'Faculty of Basic Medical Sciences',alias:'',type:'lecture',desc:'Main faculty building for Basic Medical Sciences. Serves preclinical medical students.',courses:['Medicine & Surgery','Dentistry & Dental Surgery','Medical Laboratory Science','Nursing','Optometry','Physiotherapy','Radiography'],coords:[[8.4758883,11.9802475],[8.4759246,11.9804961],[8.4756163,11.9805269],[8.4755905,11.9802841]]},
 {id:'department-of-anatomy',name:'Department of Anatomy',alias:'',type:'lab',desc:'Houses the Anatomy department including dissection labs and lecture rooms.',courses:['Anatomy'],coords:[[8.4768887,11.9801031],[8.4769347,11.9803386],[8.476743,11.9806214],[8.4764681,11.98066],[8.4762197,11.9804455],[8.47616,11.980171],[8.4763699,11.9799401],[8.4766605,11.979894]]},
 {id:'new-twin-theatres',name:'New Twin Theatres',alias:'NTT',type:'theatre',desc:'Twin lecture theatres used for large-capacity faculty lectures.',courses:[],coords:[[8.4759762,11.9795358],[8.476024,11.9799229],[8.4760477,11.9799488],[8.4758642,11.9800147],[8.4758112,11.9795669]]},
@@ -888,6 +888,15 @@ var buildingLayers={},buildingLabels={},fuse=null,lrmAvailable=false;
    ===================================================== */
 function geo2leaf(coords){return coords.map(function(p){return[p[1],p[0]];});}
 function centroid(ll){var a=0,b=0,n=ll.length;for(var i=0;i<n;i++){a+=ll[i][0];b+=ll[i][1];}return[a/n,b/n];}
+/* Bounding-box area of a raw [lng,lat] coords array.
+   Used only for render-order sorting — not geodetically exact,
+   but precise enough to rank large vs small polygons reliably. */
+function _polyBboxArea(coords){
+  var lats=coords.map(function(p){return p[1];});
+  var lngs=coords.map(function(p){return p[0];});
+  return(Math.max.apply(null,lats)-Math.min.apply(null,lats))*
+        (Math.max.apply(null,lngs)-Math.min.apply(null,lngs));
+}
 
 var _toastTimer;
 function showToast(msg,mintStyle){
@@ -969,7 +978,18 @@ function labelPriority(b){
 }
 
 function renderBuildings(){
-  BUILDINGS.forEach(function(b){
+  /* Sort largest polygons first before adding to map.
+     In SVG, elements added later sit on top. By rendering large
+     polygons (sports complex) first and small ones (pavilions) last,
+     small buildings always sit above large ones in the SVG stack and
+     receive clicks correctly — even when geometrically nested inside
+     a larger polygon. Sorting a COPY; original BUILDINGS order is
+     untouched (search, deep-link, and sheet lookups use BUILDINGS
+     directly by id, not by position). */
+  var sorted=BUILDINGS.slice().sort(function(a,b){
+    return _polyBboxArea(b.coords)-_polyBboxArea(a.coords);
+  });
+  sorted.forEach(function(b){
     var ll=geo2leaf(b.coords);
     var col=TYPE_COLORS[b.type]||'#0AC4E0';
     var poly=L.polygon(ll,{
