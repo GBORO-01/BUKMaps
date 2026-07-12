@@ -1167,7 +1167,12 @@ function handleSearch(q){
   var ql=q.toLowerCase();
   var isAKTH=AKTH_COURSES.some(function(c){return ql.indexOf(c)!==-1||c.indexOf(ql)!==-1;});
   if(isAKTH&&ql.length>2){openAKTHModal(q);return;}
-  var results=fuse?fuse.search(q).slice(0,8):BUILDINGS.filter(function(b){return b.name.toLowerCase().indexOf(ql)!==-1;}).slice(0,8).map(function(b){return{item:{id:b.id,name:b.name,type:b.type}};});
+  /* No result cap — all matches render; the overlay's own
+     overflow-y:auto (with max-height:100dvh) handles scrolling
+     for however many results a query returns. A hardcoded slice
+     here previously hid valid results silently (e.g. "Dep" has
+     16 real matches but only 8 ever rendered). */
+  var results=fuse?fuse.search(q):BUILDINGS.filter(function(b){return b.name.toLowerCase().indexOf(ql)!==-1;}).map(function(b){return{item:{id:b.id,name:b.name,type:b.type}};});
   if(!results.length){
     res.innerHTML='<div class="search-empty"><strong>No results found</strong>No building or department matching "'+q+'" was found on BUK Old Site.</div>';
     return;
